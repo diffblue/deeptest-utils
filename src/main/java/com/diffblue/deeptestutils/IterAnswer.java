@@ -41,7 +41,7 @@ public final class IterAnswer<T> implements Answer<T> {
   /**
    * Constructor.
    *
-   * @param cn name of the class>
+   * @param cn name of the class
    * @param mn name of the method
    * @param answerList list of answer objects
    * @param eps list of expected parameters

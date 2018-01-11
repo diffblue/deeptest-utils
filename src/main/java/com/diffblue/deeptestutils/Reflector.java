@@ -315,7 +315,7 @@ public final class Reflector {
   }
 
   /**
-   * This forces the creation of an instance for a given class name. If the
+   * This forces the creation of an instance for a given class. If the
    * class provides a public default constructor, it is called. If the class has
    * a private default constructor, it is made accessible and is then called.
    *
