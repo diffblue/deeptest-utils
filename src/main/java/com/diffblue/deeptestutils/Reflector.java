@@ -122,7 +122,7 @@ public final class Reflector {
    *     subclass or implementor thereof), or if an unwrapping conversion fails.
    * @exception IllegalAccessException if an error occurs
    */
-  private static <T> Object getInstanceField(
+  public static <T> Object getInstanceField(
       final Class<T> c,
       final Object o,
       final String fieldName)
