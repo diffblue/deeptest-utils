@@ -27,6 +27,10 @@ openssl enc -aes-256-cbc -d -pass pass:"${SSL_PWD}" -in ${PGP_KEY_ENC_FILENAME} 
 gpg --fast-import private.gpg
 rm private.gpg
 
+# Following section is in case a key is provided which has not already been
+# shared to a pgp public server - and documents that process.
+# NB if script 'release_util_script_create_gpg.sh' is used to create a new key,
+# this procedure will have already been done.
 if [[ "${RELEASE_KEY_TO_PUBLIC_SERVER}" == "true" ]]
 then
     gpg --keyserver pgp.mit.edu --send-keys "${GPG_KEYID}"
