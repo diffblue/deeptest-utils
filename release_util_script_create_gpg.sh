@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -euo pipefail
 #--------------------------------------------------------------------------------
 SSL_PWD="$1"
 RELEASE_KEY_TO_PUBLIC_SERVER="true"
@@ -23,13 +23,12 @@ gpg --batch --gen-key gen-key-script
 #gpg --quick-gen-key 'Sonny Martin <sonny.martin@diffblue.com>'
 #--------------------------------------------------------------------------------
 ## get key id
-#GPG_KEYID=$(gpg -K | grep ^sec | cut -d/  -f2 | cut -d\  -f1 | head -n1)
 GPG_KEYID=$(gpg -K | head -n4 | tail -n1 | tr -d ' ')
 echo "key id is: ${GPG_KEYID}"
 
 echo "encrypted key id is:"
-GPG_KEYID_ENC=`echo "${GPG_KEYID}" | openssl aes-256-cbc -a -salt -pass pass:${SSL_PWD} | openssl enc -A -base64`
-echo ${GPG_KEYID_ENC}
+GPG_KEYID_ENC=$(echo "${GPG_KEYID}" | openssl aes-256-cbc -a -salt -pass pass:"${SSL_PWD}" | openssl enc -A -base64)
+echo "${GPG_KEYID_ENC}"
 #--------------------------------------------------------------------------------
 ## list keys public
 echo "------- list public keys ------------------"
@@ -41,28 +40,28 @@ gpg --list-secret-keys
 if [[ "${RELEASE_KEY_TO_PUBLIC_SERVER}" == "true" ]]
 then
     #gpg --keyserver keyserver.ubuntu.com --send-keys ${GPG_KEYID}
-    gpg --keyserver pgp.mit.edu --send-keys ${GPG_KEYID}
+    gpg --keyserver pgp.mit.edu --send-keys "${GPG_KEYID}"
 
     ## wait for the key to be accessible
     while(true); do
         date
         #gpg --keyserver keyserver.ubuntu.com --recv-keys ${GPG_KEYID} && break || sleep 15
-        gpg --keyserver pgp.mit.edu --recv-keys ${GPG_KEYID} && break || sleep 20
+        gpg --keyserver pgp.mit.edu --recv-keys "${GPG_KEYID}" && break || sleep 20
     done
 fi
 #--------------------------------------------------------------------------------
 ## export key
 # gpg --batch --export-secret-key ${GPG_KEYID} -a --passphrase "" > private1.gpg
-gpg --batch -a --export-secret-key ${GPG_KEYID} > private1.gpg
+gpg --batch -a --export-secret-key "${GPG_KEYID}" > private1.gpg
 #gpg --armor --export-secret-key 'Sonny Martin <sonny.martin@diffblue.com>'
 
 ## encode key to file
-openssl enc -aes-256-cbc -pass pass:${SSL_PWD} -in private1.gpg -out private1.gpg.enc
+openssl enc -aes-256-cbc -pass pass:"${SSL_PWD}" -in private1.gpg -out private1.gpg.enc
 rm private1.gpg
 
 ## remove generated key
-gpg --batch --yes --delete-secret-keys ${GPG_KEYID}
-gpg --batch --yes --delete-key ${GPG_KEYID}
+gpg --batch --yes --delete-secret-keys "${GPG_KEYID}"
+gpg --batch --yes --delete-key "${GPG_KEYID}"
 
 ## cleanup local configuration
 rm gen-key-script

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu
+set -euo pipefail
 
 SSL_PWD="$1"
 FILE="$2"
