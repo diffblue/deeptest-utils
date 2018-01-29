@@ -1,6 +1,7 @@
 #!/bin/bash
+set -euo pipefail
 #------------------------------------------------------------
-VERSION=`mvn help:evaluate -Dexpression=project.version | grep -v -e "^\["`
+VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -v -e "^\\[")
 RELEASE="true"
 PGP_KEY_ENC_FILENAME="private.gpg.enc"
 RELEASE_KEY_TO_PUBLIC_SERVER="false"
@@ -15,9 +16,12 @@ decrypt_fn(){
     echo "$1" | openssl enc -A -base64 -d | openssl aes-256-cbc -d -a -pass pass:"$SSL_PWD"
 }
 
-export SONATYPETOKENUSER=`decrypt_fn "${SONATYPETOKEN_USER_ENC}"`
-export SONATYPETOKENPWD=`decrypt_fn "${SONATYPETOKEN_PWD_ENC}"`
-export GPG_KEYID=`decrypt_fn "${GPG_KEYID_ENC}"`
+SONATYPETOKENUSER=$(decrypt_fn "${SONATYPETOKEN_USER_ENC}")
+export SONATYPETOKENUSER
+SONATYPETOKENPWD=$(decrypt_fn "${SONATYPETOKEN_PWD_ENC}")
+export SONATYPETOKENPWD
+GPG_KEYID=$(decrypt_fn "${GPG_KEYID_ENC}")
+export GPG_KEYID
 #------------------------------------------------------------
 openssl enc -aes-256-cbc -d -pass pass:"${SSL_PWD}" -in ${PGP_KEY_ENC_FILENAME} -out private.gpg
 gpg --fast-import private.gpg
@@ -25,15 +29,15 @@ rm private.gpg
 
 if [[ "${RELEASE_KEY_TO_PUBLIC_SERVER}" == "true" ]]
 then
-    gpg --keyserver pgp.mit.edu --send-keys ${GPG_KEYID}
+    gpg --keyserver pgp.mit.edu --send-keys "${GPG_KEYID}"
 
     ## wait for the key to be accessible
     while(true); do
         date
-        gpg --keyserver pgp.mit.edu --recv-keys ${GPG_KEYID} && break || sleep 20
+        gpg --keyserver pgp.mit.edu --recv-keys "${GPG_KEYID}" && break || sleep 20
     done
 
-    echo "wait for 2minutes to let the key being synced"
+    echo "wait for 2 minutes to let the key be synced"
     sleep 120
 fi
 
@@ -51,6 +55,6 @@ fi
 #------------------------------------------------------------
 rm mvnsettingsPlainText.xml
 ## remove key from keyring, if this was a gpg key generated on the fly - then it would be gone forever.
-gpg --batch --yes --delete-secret-keys ${GPG_KEYID}
-gpg --batch --yes --delete-key ${GPG_KEYID}
+gpg --batch --yes --delete-secret-keys "${GPG_KEYID}"
+gpg --batch --yes --delete-key "${GPG_KEYID}"
 #------------------------------------------------------------
