@@ -2,6 +2,8 @@ package com.diffblue.deeptestutils;
 
 import java.util.ArrayList;
 
+// Copyright 2016-2017 DiffBlue limited. All rights reserved.
+
 /**
  * <code>FieldList</code> represents a list of named fields and their values.
  *
