@@ -1,0 +1,9 @@
+#------------------------------------------------------------
+# if you change the key (e.g. via create_gpg.sh) you need to:
+# - get the key id ( .create_gpg.sh provides this)
+# - get the encrypted key id ( create_gpg.sh provides this)
+# - put the encrypted key id in file “util__deploy_to_maven_central.sh”, in var: “GPG_KEYID_ENC”
+# - decode ‘mvnsettingsPlainText.xml.enc’ (use decrypt_file.sh)
+# - put the (non-encrypted) key id in it
+# - reencode to ‘mvnsettingsPlainText.xml.enc’ (use encrypt_file.sh)
+#------------------------------------------------------------
