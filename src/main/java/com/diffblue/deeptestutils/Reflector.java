@@ -21,6 +21,8 @@ import javassist.bytecode.BadBytecode;
 
 import org.objenesis.ObjenesisStd;
 
+// Copyright 2016-2017 DiffBlue limited. All rights reserved.
+
 /**
  * The <code>Reflector</code> class instantiates any Java object and sets any
  * field.
