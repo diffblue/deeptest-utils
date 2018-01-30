@@ -1,0 +1,5 @@
+target/*
+mvnsettingsPlainText.xml.enc.decrypted
+mvnsettingsPlainText.xml
+private.gpg
+
