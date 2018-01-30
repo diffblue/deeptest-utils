@@ -3,11 +3,11 @@ set -euo pipefail
 #------------------------------------------------------------
 VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -v -e "^\\[")
 RELEASE="true"
-PGP_KEY_ENC_FILENAME="private.gpg.enc"
+GPG_KEY_ENC_FILENAME="private.gpg.enc"
 RELEASE_KEY_TO_PUBLIC_SERVER="false"
 #------------------------------------------------------------
 SSL_PWD="$1"
-## encoding command used of form "echo "$var" | openssl aes-256-cbc -a -salt -pass pass:${SSL_PWD} | openssl enc -A -base64" 
+## encoding command used of form "echo "$var" | openssl aes-256-cbc -a -salt -pass pass:${SSL_PWD} | openssl enc -A -base64"
 SONATYPETOKEN_USER_ENC="VTJGc2RHVmtYMThEV2pndXpiK3lFMmQyRDgvTmhBUllTWldac3NITDMxQT0K"
 SONATYPETOKEN_PWD_ENC="VTJGc2RHVmtYMS8vam9YR0U4dExXbmlwaC9JR094TGJvTlN2ajVhOHc4bjZOL1I1UEZXY05mWFU4N2NHdzc5WgpsWXpITkIzU3pLZ2lkY2MrQkZPMDZRPT0K"
 GPG_KEYID_ENC="VTJGc2RHVmtYMThZZzFTRFJVNUYxY3kzRmdIS1FINk5nZFU3d0VxY2daZWNkWWgyYnVnRnd1cEwzNFNVN3hOTApzancrQm1ZNnNxbmxhTXdJYStERGJRPT0K"
@@ -23,7 +23,7 @@ export SONATYPETOKENPWD
 GPG_KEYID=$(decrypt_fn "${GPG_KEYID_ENC}")
 export GPG_KEYID
 #------------------------------------------------------------
-openssl enc -aes-256-cbc -d -pass pass:"${SSL_PWD}" -in ${PGP_KEY_ENC_FILENAME} -out private.gpg
+openssl enc -aes-256-cbc -d -pass pass:"${SSL_PWD}" -in ${GPG_KEY_ENC_FILENAME} -out private.gpg
 gpg --fast-import private.gpg
 rm private.gpg
 
@@ -45,7 +45,7 @@ then
     sleep 120
 fi
 
-## encoding command is of form 'openssl enc -aes-256-cbc -salt -in file.txt -out file.txt.enc' - nb 'salt' 
+## encoding command is of form 'openssl enc -aes-256-cbc -salt -in file.txt -out file.txt.enc' - nb 'salt'
 openssl enc -aes-256-cbc -d -pass pass:"${SSL_PWD}" -in mvnsettingsPlainText.xml.enc -out mvnsettingsPlainText.xml
 #------------------------------------------------------------
 if [[ "${RELEASE}" == "false" ]]
