@@ -1,3 +1,8 @@
+1.1.0
+=====
+* Update license to BSD-3 Clause
+
+
 1.0.0
 =====
  * Initial release of deeptest-utils
