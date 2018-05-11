@@ -493,7 +493,7 @@ public final class Reflector {
   private static Constructor<?> getDefaultConstructor(
       final Class<?> c) {
     for (Constructor ctor : c.getDeclaredConstructors()) {
-      if (ctor.getParameterCount() == 0) {
+      if (ctor.getParameterTypes().length == 0) {
         return ctor;
       }
     }
