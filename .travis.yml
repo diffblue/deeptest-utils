@@ -1,1 +1,30 @@
+addons:
+  apt:
+    packages:
+      - openjdk-7-jdk
+      - openjdk-6-jdk
+
 language: java
+
+matrix:
+  include:
+  - jdk: openjdk6
+    env: CUSTOM_MVN_VERION="3.2.5"
+  - jdk: openjdk7
+  - jdk: openjdk8
+  - jdk: oraclejdk8
+
+
+# `mvn` version 3.2.5 is the last that supports Java6, therefore we need to get
+# that version for the openjdk6 build.
+# cf. https://github.com/travis-ci/enterprise-installation/issues/14#issuecomment-329983790
+
+install:
+  - if [[ -n "${CUSTOM_MVN_VERION}" ]]; then
+      echo "Download Maven ${CUSTOM_MVN_VERION}....";
+      wget https://archive.apache.org/dist/maven/maven-3/${CUSTOM_MVN_VERION}/binaries/apache-maven-${CUSTOM_MVN_VERION}-bin.zip || travis_terminate 1;
+      unzip -qq apache-maven-${CUSTOM_MVN_VERION}-bin.zip || travis_terminate 1;
+      export M2_HOME=$PWD/apache-maven-${CUSTOM_MVN_VERION};
+      export PATH=$M2_HOME/bin:$PATH;
+      mvn -version;
+    fi
