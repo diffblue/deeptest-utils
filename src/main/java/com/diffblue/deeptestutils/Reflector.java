@@ -4,9 +4,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Optional;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -86,13 +84,17 @@ public final class Reflector {
     if (c == null) {
       throw new NoSuchFieldException();
     }
-    Optional<Field> field =
-        Arrays.stream(c.getDeclaredFields())
-        .filter(f -> f.getName().equals(fieldName)).findAny();
-    if (!field.isPresent()) {
+    Field field = null;
+    for (Field f : c.getDeclaredFields()) {
+      if (f.getName().equals(fieldName)) {
+        field = f;
+        break;
+      }
+    }
+    if (field == null) {
       setField(c.getSuperclass(), o, fieldName, newVal);
     } else {
-      Field property = field.get();
+      Field property = field;
       property.setAccessible(true);
 
       // remove final modifier
@@ -135,13 +137,17 @@ public final class Reflector {
     if (c == null) {
       throw new NoSuchFieldException();
     }
-    Optional<Field> field =
-        Arrays.stream(c.getDeclaredFields())
-        .filter(f -> f.getName().equals(fieldName)).findAny();
-    if (!field.isPresent()) {
+    Field field = null;
+    for (Field f : c.getDeclaredFields()) {
+      if (f.getName().equals(fieldName)) {
+        field = f;
+        break;
+      }
+    }
+    if (field == null) {
       return getInstanceField(c.getSuperclass(), o, fieldName);
     } else {
-      Field property = field.get();
+      Field property = field;
       property.setAccessible(true);
 
       try {
@@ -288,7 +294,8 @@ public final class Reflector {
    * <code>classMap</code> keeps a cache of created classes.
    *
    */
-  private static HashMap<String, Class<?>> classMap = new HashMap<>();
+  private static HashMap<String, Class<?>> classMap =
+    new HashMap<String, Class<?>>();
 
   /**
    * <code>makePublic</code> sets member flag to public.
@@ -327,15 +334,17 @@ public final class Reflector {
    */
   @SuppressWarnings("unchecked")
   public static <T> T getInstance(final Class<T> cl) {
-    Optional<Constructor<?>> ctor = getDefaultConstructor(cl);
-    if (ctor.isPresent()) {
-      Constructor<?> defaultCtor = ctor.get();
+    Constructor<?> ctor = getDefaultConstructor(cl);
+    if (ctor != null) {
+      Constructor<?> defaultCtor = ctor;
       defaultCtor.setAccessible(true);
       try {
         return (T) defaultCtor.newInstance();
-      } catch (InstantiationException
-               | InvocationTargetException
-               | IllegalAccessException ex) {
+      } catch (InstantiationException ex) {
+        return (T) new ObjenesisStd().newInstance(cl);
+      } catch (InvocationTargetException ex) {
+        return (T) new ObjenesisStd().newInstance(cl);
+      } catch (IllegalAccessException ex) {
         return (T) new ObjenesisStd().newInstance(cl);
       }
     }
@@ -478,12 +487,16 @@ public final class Reflector {
    * Returns the default constructor if one exists.
    *
    * @param c the class to search the constructor in
-   * @return an <code>Optional</code> value holding a <code>Constructor</code>
-   *     object if it exists
+   * @return a value holding a <code>Constructor</code>
+   *     object if it exists, else null
    */
-  private static Optional<Constructor<?>> getDefaultConstructor(
+  private static Constructor<?> getDefaultConstructor(
       final Class<?> c) {
-    return Arrays.stream(c.getDeclaredConstructors())
-      .filter(ctor -> ctor.getParameterCount() == 0).findAny();
+    for (Constructor ctor : c.getDeclaredConstructors()) {
+      if (ctor.getParameterTypes().length == 0) {
+        return ctor;
+      }
+    }
+    return null;
   }
 }
