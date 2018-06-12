@@ -324,16 +324,30 @@ public final class Reflector {
   }
 
   /**
-   * This forces the creation of an instance for a given class. If the
-   * class provides a public default constructor, it is called. If the class has
-   * a private default constructor, it is made accessible and is then called.
+   * This forces the creation of an instance for a given class. If the class
+   * provides a public default constructor, it is called. If the class has a
+   * private default constructor, it is made accessible and is then called. Else
+   * we use Objenesis to force creation of an instance.
+   *
+   * There are several exceptions that `Constructor.netInstance` can throw. We
+   * catch `IllegalAccessException` and `InstantiationException` and continue
+   * with Objenesis in those cases. `IllegalArgumentException` cannot be thrown
+   * as we only try to use the default constructor which has no parameters. An
+   * `InvocationTargetException` signals an exception in the constructor and is
+   * passed to the calling method. In the case of an
+   * `ExceptionInInitializerError` which signals an exception in a static
+   * initializer, we extract its cause and throw an `InvocationTargetException`.
    *
    * @param <T> type parameter of the class
    * @param cl a <code>Class</code> the class to instantiate
    * @return an <code>Object</code> which is an instance of the specified class
+   *
+   * @throws InvocationTargetException if the default constructor or a static
+   * initializer throws an exception.
    */
   @SuppressWarnings("unchecked")
-  public static <T> T getInstance(final Class<T> cl) {
+  public static <T> T getInstance(final Class<T> cl)
+    throws InvocationTargetException {
     Constructor<?> ctor = getDefaultConstructor(cl);
     if (ctor != null) {
       Constructor<?> defaultCtor = ctor;
@@ -341,8 +355,6 @@ public final class Reflector {
       try {
         return (T) defaultCtor.newInstance();
       } catch (InstantiationException ex) {
-        return (T) new ObjenesisStd().newInstance(cl);
-      } catch (InvocationTargetException ex) {
         return (T) new ObjenesisStd().newInstance(cl);
       } catch (IllegalAccessException ex) {
         return (T) new ObjenesisStd().newInstance(cl);
@@ -364,6 +376,8 @@ public final class Reflector {
    * @throws CannotCompileException if the class cannot be compiled
    * @throws InstantiationException if the class cannot be instantiated
    * @throws IllegalAccessException if the class cannot be accessed
+   * @throws InvocationTargetException if the constructor of a class throws an
+   *   exception
    * @throws BadBytecode if the on-the-fly compilation uses an invalid bytecode
    */
   public static <T> Object getInstance(final String className)
@@ -373,6 +387,7 @@ public final class Reflector {
       CannotCompileException,
       InstantiationException,
       IllegalAccessException,
+      InvocationTargetException,
       BadBytecode {
     ClassPool pool = ClassPool.getDefault();
     CtClass cl = pool.get(className);
@@ -449,7 +464,11 @@ public final class Reflector {
           .get(newClassName + "_implementation"));
       }
     } else {
-      return getInstance(Class.forName(className));
+      try {
+        return getInstance(Class.forName(className));
+      } catch (ExceptionInInitializerError ex) {
+        throw new InvocationTargetException(ex.getCause());
+      }
     }
   }
 
