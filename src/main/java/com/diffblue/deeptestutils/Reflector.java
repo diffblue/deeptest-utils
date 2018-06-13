@@ -13,6 +13,7 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
+import javassist.CtNewConstructor;
 import javassist.CtNewMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.BadBytecode;
@@ -329,14 +330,12 @@ public final class Reflector {
    * private default constructor, it is made accessible and is then called. Else
    * we use Objenesis to force creation of an instance.
    *
-   * There are several exceptions that `Constructor.netInstance` can throw. We
+   * There are several exceptions that `Constructor.newInstance` can throw. We
    * catch `IllegalAccessException` and `InstantiationException` and continue
    * with Objenesis in those cases. `IllegalArgumentException` cannot be thrown
    * as we only try to use the default constructor which has no parameters. An
    * `InvocationTargetException` signals an exception in the constructor and is
-   * passed to the calling method. In the case of an
-   * `ExceptionInInitializerError` which signals an exception in a static
-   * initializer, we extract its cause and throw an `InvocationTargetException`.
+   * passed to the calling method.
    *
    * @param <T> type parameter of the class
    * @param cl a <code>Class</code> the class to instantiate
@@ -379,6 +378,10 @@ public final class Reflector {
    * @throws InvocationTargetException if the constructor of a class throws an
    *   exception
    * @throws BadBytecode if the on-the-fly compilation uses an invalid bytecode
+   *
+   * In the case of an `ExceptionInInitializerError` from `newInstance`, which
+   * signals an exception in a static initializer, we extract its cause and
+   * throw an `InvocationTargetException`.
    */
   public static <T> Object getInstance(final String className)
       throws
@@ -421,20 +424,24 @@ public final class Reflector {
           implementation.setSuperclass(cl);
         }
 
-        // look for constructor
-        // create default constructor if none exists
-        boolean foundDefault = false;
+        // In the case of an abstract class, search any constructor in the
+        // superclass and add an empty one with the same types. The class must
+        // have a constructor.
         if (!cl.isInterface()) {
-          for (CtConstructor ctor : cl.getConstructors()) {
-            if (ctor.getParameterTypes().length == 0
-                && (ctor.getModifiers() & javassist.Modifier.ABSTRACT) == 0
-                && !ctor.isEmpty()) {
-              foundDefault = true;
-              break;
-            }
+          CtConstructor[] ctors = cl.getConstructors();
+          if (ctors.length > 0) {
+            CtConstructor newCtor =
+              CtNewConstructor.make(
+                ctors[0].getParameterTypes(),
+                ctors[0].getExceptionTypes(),
+                implementation);
+              implementation.addConstructor(newCtor);
+          } else {
+            throw new NotFoundException(
+              "cannot find constructor in abstract class");
           }
-        }
-        if (!foundDefault) {
+        } else {
+          // in the case of an interface, simply add a default constructor
           CtConstructor newCtor =
               new CtConstructor(new CtClass[] {}, implementation);
           newCtor.setBody("{}");
@@ -464,6 +471,10 @@ public final class Reflector {
           .get(newClassName + "_implementation"));
       }
     } else {
+      // If an error in the static initializer is thrown, we catch the resulting
+      // `ExceptionInInitializerError` and wrap its cause in an
+      // `InvocationTargetException`. This is done here as the static init is
+      // executed when calling `.forName`.
       try {
         return getInstance(Class.forName(className));
       } catch (ExceptionInInitializerError ex) {
