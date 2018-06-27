@@ -4,7 +4,7 @@ import org.mockito.stubbing.Answer;
 import org.mockito.invocation.InvocationOnMock;
 import java.util.ArrayList;
 
-// Copyright 2016-2017 DiffBlue limited. All rights reserved.
+// Copyright 2016-2018 Diffblue limited. All rights reserved.
 
 /**
  * <code>IterAnswer</code> provides a list of method return values calculated by
