@@ -43,3 +43,8 @@ install:
     set +eo pipefail
 
   - mvn -version
+
+script:
+  - mvn test -B
+  # verify the version string
+  - ./check_version
