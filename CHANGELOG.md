@@ -1,3 +1,8 @@
+1.3.0
+======
+* [TG-3881] Allow `InvocationTargetException` in `Reflector.getInstance`
+* Use HTTP maven central mirror for openJDK6
+
 1.2.0
 =====
 * [TG-3495] Support Java 6 and Java 7

@@ -1,6 +1,6 @@
 package com.diffblue.deeptestutils;
 
-// Copyright 2016-2017 DiffBlue limited. All rights reserved.
+// Copyright 2016-2018 Diffblue limited. All rights reserved.
 
 /**
  * <code>UnexpectedValueException</code> is used to signal an expectation
