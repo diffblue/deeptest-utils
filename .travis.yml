@@ -28,14 +28,16 @@ install:
       export PATH=$M2_HOME/bin:$PATH;
       mvn -version;
       mkdir ~/.m2;
-      echo "<settings>
-  <mirrors>
-    <mirror>
-      <id>HTTP fallback</id>
-      <name>Maven repo1</name>
-      <url>http://repo1.maven.org/maven2/</url>
-      <mirrorOf>central</mirrorOf>
-    </mirror>
-  </mirrors>
-</settings>" > ~/.m2/settings.xml;
+      echo "
+        <settings>
+          <mirrors>
+            <mirror>
+              <id>HTTP fallback</id>
+              <name>Maven repo1</name>
+              <url>http://repo1.maven.org/maven2/</url>
+              <mirrorOf>central</mirrorOf>
+            </mirror>
+          </mirrors>
+        </settings>
+      " > "${HOME}/.m2/settings.xml"
     fi
