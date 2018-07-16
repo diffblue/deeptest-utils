@@ -1,8 +1,8 @@
 addons:
   apt:
     packages:
-      - openjdk-7-jdk
       - openjdk-6-jdk
+      - openjdk-7-jdk
 
 language: java
 
@@ -20,22 +20,26 @@ matrix:
 # cf. https://github.com/travis-ci/enterprise-installation/issues/14#issuecomment-329983790
 
 install:
-  - if [[ -n "${CUSTOM_MVN_VERION}" ]]; then
-      echo "Download Maven ${CUSTOM_MVN_VERION}....";
-      wget https://archive.apache.org/dist/maven/maven-3/${CUSTOM_MVN_VERION}/binaries/apache-maven-${CUSTOM_MVN_VERION}-bin.zip || travis_terminate 1;
-      unzip -qq apache-maven-${CUSTOM_MVN_VERION}-bin.zip || travis_terminate 1;
-      export M2_HOME=$PWD/apache-maven-${CUSTOM_MVN_VERION};
-      export PATH=$M2_HOME/bin:$PATH;
-      mvn -version;
-      mkdir ~/.m2;
-      echo "<settings>
-  <mirrors>
-    <mirror>
-      <id>HTTP fallback</id>
-      <name>Maven repo1</name>
-      <url>http://repo1.maven.org/maven2/</url>
-      <mirrorOf>central</mirrorOf>
-    </mirror>
-  </mirrors>
-</settings>" > ~/.m2/settings.xml;
+  - |
+    # Install custom version of Maven
+    set -eo pipefail
+    if [[ -n "${CUSTOM_MVN_VERION}" ]]; then
+      wget -O- "https://archive.apache.org/dist/maven/maven-3/${CUSTOM_MVN_VERION}/binaries/apache-maven-${CUSTOM_MVN_VERION}-bin.tar.gz" | tar -C "${HOME}" -xz
+      export M2_HOME="${HOME}/apache-maven-${CUSTOM_MVN_VERION}"
+      export PATH="${M2_HOME}/bin:${PATH}"
+      echo "
+        <settings>
+          <mirrors>
+            <mirror>
+              <id>HTTP fallback</id>
+              <name>Maven repo1</name>
+              <url>http://repo1.maven.org/maven2/</url>
+              <mirrorOf>central</mirrorOf>
+            </mirror>
+          </mirrors>
+        </settings>
+      " > "${HOME}/.m2/settings.xml"
     fi
+    set +eo pipefail
+
+  - mvn -version
