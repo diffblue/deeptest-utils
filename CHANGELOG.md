@@ -1,3 +1,7 @@
+1.3.1
+======
+* Fix Java 1.6 deployment
+
 1.3.0
 ======
 * [TG-3881] Allow `InvocationTargetException` in `Reflector.getInstance`
