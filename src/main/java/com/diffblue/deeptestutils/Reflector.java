@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 
-import javassist.CannotCompileException;
+// import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
@@ -14,8 +14,8 @@ import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
-import javassist.NotFoundException;
-import javassist.bytecode.BadBytecode;
+// import javassist.NotFoundException;
+// import javassist.bytecode.BadBytecode;
 
 import org.objenesis.ObjenesisStd;
 
@@ -53,11 +53,14 @@ public final class Reflector {
   public static void setField(
       final Object obj,
       final String fieldName,
-      final Object newVal)
-      throws
-      NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    setField(obj.getClass(), obj, fieldName, newVal);
-  }
+      final Object newVal) {
+        try {
+          setField(obj.getClass(), obj, fieldName, newVal);
+        } catch (Exception e) {
+            return;
+        }
+      }
+
 
   /**
    * Sets a field of an object instance.
@@ -77,37 +80,40 @@ public final class Reflector {
    */
   private static <T> void setField(
           final Class<T> c, final Object o, final String fieldName,
-          final Object newVal) throws
-          NoSuchFieldException, IllegalArgumentException,
-          IllegalAccessException {
+          final Object newVal) {
+// throws NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+    try {
+        if (c == null) {
+              throw new NoSuchFieldException();
+            }
+            Field field = null;
+            for (Field f : c.getDeclaredFields()) {
+              if (f.getName().equals(fieldName)) {
+                field = f;
+                break;
+              }
+            }
+            if (field == null) {
+              setField(c.getSuperclass(), o, fieldName, newVal);
+            } else {
+              Field property = field;
+              property.setAccessible(true);
 
-    if (c == null) {
-      throw new NoSuchFieldException();
-    }
-    Field field = null;
-    for (Field f : c.getDeclaredFields()) {
-      if (f.getName().equals(fieldName)) {
-        field = f;
-        break;
-      }
-    }
-    if (field == null) {
-      setField(c.getSuperclass(), o, fieldName, newVal);
-    } else {
-      Field property = field;
-      property.setAccessible(true);
+              // remove final modifier
+              Field modifiersField = Field.class.getDeclaredField("modifiers");
+              modifiersField.setAccessible(true);
+              modifiersField
+                .setInt(property, property.getModifiers() & ~Modifier.FINAL);
+              try {
+                property.set(o, newVal);
+              } catch (IllegalAccessException ex) {
+                throw new RuntimeException(ex); // Should never happen.
+              }
+        }
+    } catch (Exception e) {
 
-      // remove final modifier
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
-      modifiersField.setAccessible(true);
-      modifiersField
-        .setInt(property, property.getModifiers() & ~Modifier.FINAL);
-      try {
-        property.set(o, newVal);
-      } catch (IllegalAccessException ex) {
-        throw new RuntimeException(ex); // Should never happen.
-      }
     }
+
   }
 
   /**
@@ -129,33 +135,40 @@ public final class Reflector {
   public static <T> Object getInstanceField(
       final Class<T> c,
       final Object o,
-      final String fieldName)
-      throws
-      NoSuchFieldException,
-      IllegalArgumentException,
-      IllegalAccessException {
-    if (c == null) {
-      throw new NoSuchFieldException();
-    }
-    Field field = null;
-    for (Field f : c.getDeclaredFields()) {
-      if (f.getName().equals(fieldName)) {
-        field = f;
-        break;
-      }
-    }
-    if (field == null) {
-      return getInstanceField(c.getSuperclass(), o, fieldName);
-    } else {
-      Field property = field;
-      property.setAccessible(true);
+      final String fieldName) {
+      // throws
+      // NoSuchFieldException,
+      // IllegalArgumentException,
+      // IllegalAccessException
 
-      try {
-        return property.get(o);
-      } catch (IllegalAccessException ex) {
-        throw new RuntimeException(ex); // Should never happen.
-      }
+
+    try {
+    if (c == null) {
+          throw new NoSuchFieldException();
+        }
+        Field field = null;
+        for (Field f : c.getDeclaredFields()) {
+          if (f.getName().equals(fieldName)) {
+            field = f;
+            break;
+          }
+        }
+        if (field == null) {
+          return getInstanceField(c.getSuperclass(), o, fieldName);
+        } else {
+          Field property = field;
+          property.setAccessible(true);
+
+          try {
+            return property.get(o);
+          } catch (IllegalAccessException ex) {
+            throw new RuntimeException(ex); // Should never happen.
+          }
+        }
+    } catch (Exception e) {
+        return null;
     }
+
   }
 
   /**
@@ -173,10 +186,16 @@ public final class Reflector {
    */
   public static Object getInstanceField(
     final Object obj,
-    final String fieldName)
-      throws
-      NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    return getInstanceField(obj.getClass(), obj, fieldName);
+    final String fieldName) {
+     //  throws
+      // NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+
+     try {
+     return getInstanceField(obj.getClass(), obj, fieldName);
+     } catch (Exception e) {
+        return null;
+     }
+
   }
 
   /**
@@ -187,68 +206,74 @@ public final class Reflector {
    * @return the <code>Class</code> object
    * @exception ClassNotFoundException if class cannot be found
    */
-  public static Class<?> forName(final String className)
-      throws ClassNotFoundException {
+  public static Class<?> forName(final String className) {
+     //  throws ClassNotFoundException
+
+    try {
     if (className.equals("float")) {
-      return float.class;
-    }
-    if (className.equals("byte")) {
-      return byte.class;
-    }
-    if (className.equals("char")) {
-      return char.class;
-    }
-    if (className.equals("short")) {
-      return short.class;
-    }
-    if (className.equals("double")) {
-      return double.class;
-    }
-    if (className.equals("int")) {
-      return int.class;
-    }
-    if (className.equals("long")) {
-      return long.class;
-    }
-    if (className.equals("boolean")) {
-      return boolean.class;
-    }
-    // remove whitespace from string
-    String cleanedName = className.replaceAll("\\s+", "");
-    // check if array type
-    if (cleanedName.endsWith("[]")) {
-      String arrayPrefix = "";
-      // collect information about multi-array
-      while (cleanedName.endsWith("[]")) {
-        int parenthesisIndex = cleanedName.length() - 2;
-        arrayPrefix += ("[");
-        cleanedName = cleanedName.substring(0, parenthesisIndex);
-      }
-      //primitive types need to be called in a special way
-      if (cleanedName.equals("float")) {
-        cleanedName = "F";
-      } else if (cleanedName.equals("byte")) {
-        cleanedName = "B";
-      } else if (cleanedName.equals("char")) {
-        cleanedName = "C";
-      } else if (cleanedName.equals("short")) {
-        cleanedName = "S";
-      } else if (cleanedName.equals("double")) {
-        cleanedName = "D";
-      } else if (cleanedName.equals("int")) {
-        cleanedName = "I";
-      } else if (cleanedName.equals("long")) {
-        cleanedName = "J";
-      } else if (cleanedName.equals("boolean")) {
-        cleanedName = "Z";
-      } else {
-        //non-primitive array types look like "[Lpackage.of.MyClass;"
-        cleanedName = "L" + cleanedName + ";";
-      }
-      return Class.forName(arrayPrefix + cleanedName);
+          return float.class;
+        }
+        if (className.equals("byte")) {
+          return byte.class;
+        }
+        if (className.equals("char")) {
+          return char.class;
+        }
+        if (className.equals("short")) {
+          return short.class;
+        }
+        if (className.equals("double")) {
+          return double.class;
+        }
+        if (className.equals("int")) {
+          return int.class;
+        }
+        if (className.equals("long")) {
+          return long.class;
+        }
+        if (className.equals("boolean")) {
+          return boolean.class;
+        }
+        // remove whitespace from string
+        String cleanedName = className.replaceAll("\\s+", "");
+        // check if array type
+        if (cleanedName.endsWith("[]")) {
+          String arrayPrefix = "";
+          // collect information about multi-array
+          while (cleanedName.endsWith("[]")) {
+            int parenthesisIndex = cleanedName.length() - 2;
+            arrayPrefix += ("[");
+            cleanedName = cleanedName.substring(0, parenthesisIndex);
+          }
+          //primitive types need to be called in a special way
+          if (cleanedName.equals("float")) {
+            cleanedName = "F";
+          } else if (cleanedName.equals("byte")) {
+            cleanedName = "B";
+          } else if (cleanedName.equals("char")) {
+            cleanedName = "C";
+          } else if (cleanedName.equals("short")) {
+            cleanedName = "S";
+          } else if (cleanedName.equals("double")) {
+            cleanedName = "D";
+          } else if (cleanedName.equals("int")) {
+            cleanedName = "I";
+          } else if (cleanedName.equals("long")) {
+            cleanedName = "J";
+          } else if (cleanedName.equals("boolean")) {
+            cleanedName = "Z";
+          } else {
+            //non-primitive array types look like "[Lpackage.of.MyClass;"
+            cleanedName = "L" + cleanedName + ";";
+          }
+          return Class.forName(arrayPrefix + cleanedName);
+        }
+
+        return Class.forName(className);
+    } catch (ClassNotFoundException e) {
+        return null;
     }
 
-    return Class.forName(className);
   }
 
   /**
@@ -261,16 +286,23 @@ public final class Reflector {
    */
   @SuppressWarnings("unchecked")
   public static Class<? extends Throwable> toThrowableClass(
-      final String className)
-      throws ClassCastException, ClassNotFoundException {
+      final String className) {
+      // throws ClassCastException, ClassNotFoundException
+
+    try {
     final Class throwableClass = Throwable.class;
-    Class<?> cl = forName(className);
-    if (cl.isAssignableFrom(throwableClass)) {
-      return (Class<? extends Throwable>) cl;
-    } else {
-      throw
-        new ClassCastException("cannot cast " + className + " to Throwable");
+        Class<?> cl = forName(className);
+        if (cl.isAssignableFrom(throwableClass)) {
+          return (Class<? extends Throwable>) cl;
+        } else {
+          throw
+            new ClassCastException("cannot cast " + className
+                + " to Throwable");
+        }
+    } catch (Exception e) {
+        return null;
     }
+
   }
 
   /**
@@ -366,91 +398,98 @@ public final class Reflector {
    * @throws IllegalAccessException if the class cannot be accessed
    * @throws BadBytecode if the on-the-fly compilation uses an invalid bytecode
    */
-  public static <T> Object getInstance(final String className)
-      throws
-      ClassNotFoundException,
-      NotFoundException,
-      CannotCompileException,
-      InstantiationException,
-      IllegalAccessException,
-      BadBytecode {
-    ClassPool pool = ClassPool.getDefault();
-    CtClass cl = pool.get(className);
+  public static <T> Object getInstance(final String className) {
+      // throws
+      // ClassNotFoundException,
+      // NotFoundException,
+      // CannotCompileException,
+      // InstantiationException,
+      // IllegalAccessException,
+      // BadBytecode
 
-    for (CtMethod m : cl.getDeclaredMethods()) {
-      makePublic(m);
-    }
+    try {
+        ClassPool pool = ClassPool.getDefault();
+        CtClass cl = pool.get(className);
 
-    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-      makePublic(ctor);
-    }
-
-    for (CtField f : cl.getDeclaredFields()) {
-      makePublic(f);
-    }
-
-    makePublic(cl);
-
-    // we consider a class abstract if any method has no body
-    if (isAbstract(cl) || cl.isInterface()) {
-      String packageName = "com.diffblue.test_gen.";
-      String newClassName = packageName + removePackageFromName(className);
-
-      CtClass implementation = pool.getOrNull(newClassName + "_implementation");
-      if (implementation == null) {
-        implementation = pool.makeClass(newClassName + "_implementation");
-
-        if (cl.isInterface()) {
-          implementation.setInterfaces(new CtClass[] {cl });
-        } else {
-          implementation.setSuperclass(cl);
-        }
-
-        // look for constructor
-        // create default constructor if none exists
-        boolean foundDefault = false;
-        if (!cl.isInterface()) {
-          for (CtConstructor ctor : cl.getConstructors()) {
-            if (ctor.getParameterTypes().length == 0
-                && (ctor.getModifiers() & javassist.Modifier.ABSTRACT) == 0
-                && !ctor.isEmpty()) {
-              foundDefault = true;
-              break;
-            }
-          }
-        }
-        if (!foundDefault) {
-          CtConstructor newCtor =
-              new CtConstructor(new CtClass[] {}, implementation);
-          newCtor.setBody("{}");
-          implementation.addConstructor(newCtor);
-        }
-
-        // declared methods or only methods ?
         for (CtMethod m : cl.getDeclaredMethods()) {
-          if (isAbstract(m)) {
-            CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
-                                               m.getReturnType(),
-                                               m.getName(),
-                                               m.getParameterTypes(),
-                                               m.getExceptionTypes(),
-                                               null,
-                                               implementation);
-            implementation.addMethod(method);
-          }
+          makePublic(m);
         }
 
-        Class<?> ic = pool.toClass(implementation);
+        for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+          makePublic(ctor);
+        }
 
-        classMap.put(newClassName + "_implementation", ic);
-        return getInstance(ic);
-      } else {
-        return getInstance((Class<?>) classMap
-          .get(newClassName + "_implementation"));
-      }
-    } else {
-      return getInstance(Class.forName(className));
+        for (CtField f : cl.getDeclaredFields()) {
+          makePublic(f);
+        }
+
+        makePublic(cl);
+
+        // we consider a class abstract if any method has no body
+        if (isAbstract(cl) || cl.isInterface()) {
+          String packageName = "com.diffblue.test_gen.";
+          String newClassName = packageName + removePackageFromName(className);
+
+          CtClass implementation = pool.getOrNull(newClassName
+                + "_implementation");
+          if (implementation == null) {
+            implementation = pool.makeClass(newClassName + "_implementation");
+
+            if (cl.isInterface()) {
+              implementation.setInterfaces(new CtClass[] {cl });
+            } else {
+              implementation.setSuperclass(cl);
+            }
+
+            // look for constructor
+            // create default constructor if none exists
+            boolean foundDefault = false;
+            if (!cl.isInterface()) {
+              for (CtConstructor ctor : cl.getConstructors()) {
+                if (ctor.getParameterTypes().length == 0
+                    && (ctor.getModifiers() & javassist.Modifier.ABSTRACT) == 0
+                    && !ctor.isEmpty()) {
+                  foundDefault = true;
+                  break;
+                }
+              }
+            }
+            if (!foundDefault) {
+              CtConstructor newCtor =
+                  new CtConstructor(new CtClass[] {}, implementation);
+              newCtor.setBody("{}");
+              implementation.addConstructor(newCtor);
+            }
+
+            // declared methods or only methods ?
+            for (CtMethod m : cl.getDeclaredMethods()) {
+              if (isAbstract(m)) {
+                CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
+                                                   m.getReturnType(),
+                                                   m.getName(),
+                                                   m.getParameterTypes(),
+                                                   m.getExceptionTypes(),
+                                                   null,
+                                                   implementation);
+                implementation.addMethod(method);
+              }
+            }
+
+            Class<?> ic = pool.toClass(implementation);
+
+            classMap.put(newClassName + "_implementation", ic);
+            return getInstance(ic);
+          } else {
+            return getInstance((Class<?>) classMap
+              .get(newClassName + "_implementation"));
+          }
+        } else {
+          return getInstance(Class.forName(className));
+        }
+    } catch (Exception e) {
+        return null;
     }
+
   }
 
   /**
