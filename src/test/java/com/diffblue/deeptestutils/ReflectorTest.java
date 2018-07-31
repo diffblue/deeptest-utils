@@ -79,7 +79,7 @@ public class ReflectorTest {
       String fieldName = null;
 
       /* Act */
-      thrown.expect(NoSuchFieldException.class);
+      thrown.expect(DeeptestUtilsRuntimeException.class);
       retval = com.diffblue.deeptestutils.Reflector.getInstanceField(c, o, fieldName);
 
       /* Method return type is void, or not expected to return */

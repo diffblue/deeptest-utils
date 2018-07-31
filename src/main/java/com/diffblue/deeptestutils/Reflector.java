@@ -16,7 +16,6 @@ import javassist.CtMethod;
 import javassist.CtNewConstructor;
 import javassist.CtNewMethod;
 import javassist.NotFoundException;
-import javassist.bytecode.BadBytecode;
 
 import org.objenesis.ObjenesisStd;
 
@@ -43,21 +42,20 @@ public final class Reflector {
    * @param obj an <code>Object</code> instance to change
    * @param fieldName a <code>String</code> the name of the field to change
    * @param newVal an <code>Object</code> the new value for the field
-   *
-   * @exception NoSuchFieldException if a field with the specified name is not
-   *     found.
-   * @exception IllegalArgumentException if the specified object is not an
-   *     instance of the class or interface declaring the underlying field (or a
-   *     subclass or implementor thereof), or if an unwrapping conversion fails.
-   * @exception IllegalAccessException if an error occurs
    */
   public static void setField(
       final Object obj,
       final String fieldName,
-      final Object newVal)
-      throws
-      NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
-    setField(obj.getClass(), obj, fieldName, newVal);
+      final Object newVal) {
+        try {
+          setField(obj.getClass(), obj, fieldName, newVal);
+        } catch (NoSuchFieldException e) {
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        } catch (IllegalArgumentException e) {
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        } catch (IllegalAccessException e) {
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        }
   }
 
   /**
@@ -119,44 +117,36 @@ public final class Reflector {
    * @param o the <code>Object</code> whose field is read
    * @param fieldName a <code>String</code> as the name of the field
    * @return the value the field holds
-   *
-   * @exception NoSuchFieldException if a field with the specified name is not
-   *     found.
-   * @exception IllegalArgumentException if the specified object is not an
-   *     instance of the class or interface declaring the underlying field (or a
-   *     subclass or implementor thereof), or if an unwrapping conversion fails.
-   * @exception IllegalAccessException if an error occurs
    */
   public static <T> Object getInstanceField(
       final Class<T> c,
       final Object o,
-      final String fieldName)
-      throws
-      NoSuchFieldException,
-      IllegalArgumentException,
-      IllegalAccessException {
+      final String fieldName) {
     if (c == null) {
-      throw new NoSuchFieldException();
+      throw new DeeptestUtilsRuntimeException(fieldName
+          + " is not a field in class " + c, new NoSuchFieldException());
     }
-    Field field = null;
-    for (Field f : c.getDeclaredFields()) {
-      if (f.getName().equals(fieldName)) {
-        field = f;
-        break;
+      Field field = null;
+      for (Field f : c.getDeclaredFields()) {
+        if (f.getName().equals(fieldName)) {
+          field = f;
+          break;
+        }
       }
-    }
-    if (field == null) {
-      return getInstanceField(c.getSuperclass(), o, fieldName);
-    } else {
-      Field property = field;
-      property.setAccessible(true);
+      if (field == null) {
+        return getInstanceField(c.getSuperclass(), o, fieldName);
+      } else {
+        Field property = field;
+        property.setAccessible(true);
 
-      try {
-        return property.get(o);
-      } catch (IllegalAccessException ex) {
-        throw new RuntimeException(ex); // Should never happen.
+        try {
+          return property.get(o);
+        } catch (IllegalArgumentException e) {
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        } catch (IllegalAccessException e) { // Should never happen.
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        }
       }
-    }
   }
 
   /**
@@ -166,17 +156,10 @@ public final class Reflector {
    * @param obj the <code>Object</code> instance to use
    * @param fieldName <code>String</code> value of the name of the field to read
    * @return the <code>Object</code> value read from the field
-   * @exception NoSuchFieldException if the field does not exist
-   * @exception IllegalArgumentException if the specified object is not an
-   *     instance of the class or interface declaring the underlying field (or a
-   *     subclass or implementor thereof), or if an unwrapping conversion fails.
-   * @exception IllegalAccessException if an error occurs
    */
   public static Object getInstanceField(
     final Object obj,
-    final String fieldName)
-      throws
-      NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+    final String fieldName) {
     return getInstanceField(obj.getClass(), obj, fieldName);
   }
 
@@ -186,10 +169,8 @@ public final class Reflector {
    *
    * @param className name of class/type as <code>String</code>
    * @return the <code>Class</code> object
-   * @exception ClassNotFoundException if class cannot be found
    */
-  public static Class<?> forName(final String className)
-      throws ClassNotFoundException {
+  public static Class<?> forName(final String className) {
     if (className.equals("float")) {
       return float.class;
     }
@@ -246,10 +227,18 @@ public final class Reflector {
         //non-primitive array types look like "[Lpackage.of.MyClass;"
         cleanedName = "L" + cleanedName + ";";
       }
-      return Class.forName(arrayPrefix + cleanedName);
-    }
+      try {
+        return Class.forName(arrayPrefix + cleanedName);
+      } catch (ClassNotFoundException e) {
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
 
-    return Class.forName(className);
+    }
+    try {
+      return Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    }
   }
 
   /**
@@ -257,20 +246,18 @@ public final class Reflector {
    *
    * @param className name of class as <code>String</code>
    * @return the <code>Class</code> object
-   * @exception ClassCastException if class cannot be cast to Throwable
-   * @exception ClassNotFoundException if class cannot be found
    */
   @SuppressWarnings("unchecked")
   public static Class<? extends Throwable> toThrowableClass(
-      final String className)
-      throws ClassCastException, ClassNotFoundException {
+      final String className) {
     final Class throwableClass = Throwable.class;
     Class<?> cl = forName(className);
     if (cl.isAssignableFrom(throwableClass)) {
       return (Class<? extends Throwable>) cl;
     } else {
       throw
-        new ClassCastException("cannot cast " + className + " to Throwable");
+        new DeeptestUtilsRuntimeException("Cannot cast " + className
+            + " to Throwable", new ClassCastException());
     }
   }
 
@@ -369,117 +356,147 @@ public final class Reflector {
    * @param className a <code>String</code> giving the name of the class
    * @return an <code>Object</code> which is an instance of the specified class
    *
-   * @throws ClassNotFoundException if the class cannot be found in the
-   * classpath
-   * @throws NotFoundException signals that something could not be found
-   * @throws CannotCompileException if the class cannot be compiled
-   * @throws InstantiationException if the class cannot be instantiated
-   * @throws IllegalAccessException if the class cannot be accessed
-   * @throws InvocationTargetException if the constructor of a class throws an
-   *   exception
-   * @throws BadBytecode if the on-the-fly compilation uses an invalid bytecode
+   * @throws InvocationTargetException if the constructor of a class
+   * throws an exception
    *
    * In the case of an `ExceptionInInitializerError` from `newInstance`, which
    * signals an exception in a static initializer, we extract its cause and
    * throw an `InvocationTargetException`.
    */
   public static <T> Object getInstance(final String className)
-      throws
-      ClassNotFoundException,
-      NotFoundException,
-      CannotCompileException,
-      InstantiationException,
-      IllegalAccessException,
-      InvocationTargetException,
-      BadBytecode {
-    ClassPool pool = ClassPool.getDefault();
-    CtClass cl = pool.get(className);
+      throws InvocationTargetException {
+    try {
+      ClassPool pool = ClassPool.getDefault();
+      CtClass cl = pool.get(className);
 
-    for (CtMethod m : cl.getDeclaredMethods()) {
-      makePublic(m);
-    }
+      for (CtMethod m : cl.getDeclaredMethods()) {
+        makePublic(m);
+      }
 
-    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-      makePublic(ctor);
-    }
+      for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+        makePublic(ctor);
+      }
 
-    for (CtField f : cl.getDeclaredFields()) {
-      makePublic(f);
-    }
+      for (CtField f : cl.getDeclaredFields()) {
+        makePublic(f);
+      }
 
-    makePublic(cl);
+      makePublic(cl);
 
-    // we consider a class abstract if any method has no body
-    if (isAbstract(cl) || cl.isInterface()) {
-      String packageName = "com.diffblue.test_gen.";
-      String newClassName = packageName + removePackageFromName(className);
+      // we consider a class abstract if any method has no body
+      if (isAbstract(cl) || cl.isInterface()) {
+        String packageName = "com.diffblue.test_gen.";
+        String newClassName = packageName
+            + removePackageFromName(className);
 
-      CtClass implementation = pool.getOrNull(newClassName + "_implementation");
-      if (implementation == null) {
-        implementation = pool.makeClass(newClassName + "_implementation");
+        CtClass implementation = pool.getOrNull(newClassName
+            + "_implementation");
+        if (implementation == null) {
+          implementation = pool.makeClass(newClassName
+              + "_implementation");
 
-        if (cl.isInterface()) {
-          implementation.setInterfaces(new CtClass[] {cl });
-        } else {
-          implementation.setSuperclass(cl);
-        }
-
-        // In the case of an abstract class, search any constructor in the
-        // superclass and add an empty one with the same types. The class must
-        // have a constructor.
-        if (!cl.isInterface()) {
-          CtConstructor[] ctors = cl.getConstructors();
-          if (ctors.length > 0) {
-            CtConstructor newCtor =
-              CtNewConstructor.make(
-                ctors[0].getParameterTypes(),
-                ctors[0].getExceptionTypes(),
-                implementation);
-              implementation.addConstructor(newCtor);
+          if (cl.isInterface()) {
+            implementation.setInterfaces(new CtClass[] {cl });
           } else {
-            throw new NotFoundException(
-              "cannot find constructor in abstract class");
+            try {
+              implementation.setSuperclass(cl);
+            } catch (CannotCompileException e) {
+              throw new
+                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+            }
           }
+
+          // In the case of an abstract class, search any constructor in
+          //  the superclass and add an empty one with the same types.
+          // The class must have a constructor.
+          if (!cl.isInterface()) {
+            try {
+              CtConstructor[] ctors = cl.getConstructors();
+              if (ctors.length > 0) {
+                CtConstructor newCtor =
+                  CtNewConstructor.make(
+                    ctors[0].getParameterTypes(),
+                    ctors[0].getExceptionTypes(),
+                    implementation);
+                  implementation.addConstructor(newCtor);
+              } else {
+                throw new DeeptestUtilsRuntimeException(
+                  "Cannot find constructor in abstract class",
+                  new NotFoundException(
+                      "Cannot find constructor in abstract class"));
+              }
+            } catch (CannotCompileException e) {
+              throw new
+                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+            } catch (NotFoundException e) {
+              throw new
+                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+            }
+
+          } else {
+            // in the case of an interface, simply add a default
+            // constructor
+            try {
+              CtConstructor newCtor =
+                  new CtConstructor(new CtClass[] {}, implementation);
+              newCtor.setBody("{}");
+              implementation.addConstructor(newCtor);
+            } catch (CannotCompileException e) {
+              throw new
+                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+            }
+          }
+
+          // declared methods or only methods ?
+          try {
+            for (CtMethod m : cl.getDeclaredMethods()) {
+              if (isAbstract(m)) {
+                CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
+                                                   m.getReturnType(),
+                                                   m.getName(),
+                                                   m.getParameterTypes(),
+                                                   m.getExceptionTypes(),
+                                                   null,
+                                                   implementation);
+                implementation.addMethod(method);
+              }
+            }
+          } catch (CannotCompileException e) {
+            throw new
+                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+          } catch (NotFoundException e) {
+            throw new
+                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+          }
+
+          try {
+            Class<?> ic = pool.toClass(implementation);
+            classMap.put(newClassName + "_implementation", ic);
+            return getInstance(ic);
+          } catch (CannotCompileException e) {
+            throw new
+                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+          }
+
         } else {
-          // in the case of an interface, simply add a default constructor
-          CtConstructor newCtor =
-              new CtConstructor(new CtClass[] {}, implementation);
-          newCtor.setBody("{}");
-          implementation.addConstructor(newCtor);
+          return getInstance((Class<?>) classMap
+            .get(newClassName + "_implementation"));
         }
-
-        // declared methods or only methods ?
-        for (CtMethod m : cl.getDeclaredMethods()) {
-          if (isAbstract(m)) {
-            CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
-                                               m.getReturnType(),
-                                               m.getName(),
-                                               m.getParameterTypes(),
-                                               m.getExceptionTypes(),
-                                               null,
-                                               implementation);
-            implementation.addMethod(method);
-          }
-        }
-
-        Class<?> ic = pool.toClass(implementation);
-
-        classMap.put(newClassName + "_implementation", ic);
-        return getInstance(ic);
       } else {
-        return getInstance((Class<?>) classMap
-          .get(newClassName + "_implementation"));
+        // If an error in the static initializer is thrown, we catch
+        // the resulting `ExceptionInInitializerError` and wrap its
+        // cause in an `InvocationTargetException`. This is done here as
+        // the static init is executed when calling `.forName`.
+        try {
+          return getInstance(Class.forName(className));
+        } catch (ExceptionInInitializerError ex) {
+          throw new InvocationTargetException(ex.getCause());
+        } catch (ClassNotFoundException e) {
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        }
       }
-    } else {
-      // If an error in the static initializer is thrown, we catch the resulting
-      // `ExceptionInInitializerError` and wrap its cause in an
-      // `InvocationTargetException`. This is done here as the static init is
-      // executed when calling `.forName`.
-      try {
-        return getInstance(Class.forName(className));
-      } catch (ExceptionInInitializerError ex) {
-        throw new InvocationTargetException(ex.getCause());
-      }
+    } catch (NotFoundException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
   }
 
