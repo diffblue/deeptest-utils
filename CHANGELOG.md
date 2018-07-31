@@ -1,3 +1,7 @@
+1.4.0
+=====
+* Wrap exceptions from Deeptestutils in a runtime exception
+
 1.3.1
 ======
 * Fix Java 1.6 deployment
