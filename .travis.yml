@@ -9,7 +9,6 @@ language: java
 matrix:
   include:
   - jdk: openjdk8
-    env: CUSTOM_MVN_VERION="3.2.5"
     os: osx
     osx_image: xcode8.3
   - os: osx
