@@ -8,13 +8,11 @@ language: java
 
 matrix:
   include:
-  - jdk: openjdk6
-    env: CUSTOM_MVN_VERION="3.2.5"
-  - jdk: openjdk7
   - jdk: openjdk8
-  - jdk: oraclejdk8
-  - jdk: openjdk9
-  - jdk: oraclejdk9
+    env: CUSTOM_MVN_VERION="3.2.5"
+    os: osx
+    osx_image: xcode8.3
+  - os: osx
 
 # `mvn` version 3.2.5 is the last that supports Java6, therefore we need to get
 # that version for the openjdk6 build.
