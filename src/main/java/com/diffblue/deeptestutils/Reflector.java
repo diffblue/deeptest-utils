@@ -55,6 +55,28 @@ public final class Reflector {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
   }
+
+  /**
+   * Sets a given static field of a class via reflection, bypassing the
+   * private modifier.
+   *
+   * @param <T> type parameter of the class
+   * @param c the <code>Class</code> of the static field to set
+   * @param fieldName a <code>String</code> the name of the field to change
+   * @param newVal an <code>Object</code> the new value for the field
+   */
+  public static <T> void setStaticField(final Class<T> c,
+                                        final String fieldName,
+                                        final Object newVal) {
+    try {
+      setField(c, null, fieldName, newVal);
+    } catch (NoSuchFieldException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalArgumentException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalAccessException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    }
   }
 
   /**
