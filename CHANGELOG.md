@@ -1,3 +1,7 @@
+1.5.0
+=====
+* Add a method to Reflector to set a static field of a class
+
 1.4.0
 =====
 * Wrap exceptions from Deeptestutils in a runtime exception
