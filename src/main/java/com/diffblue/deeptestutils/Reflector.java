@@ -36,26 +36,47 @@ public final class Reflector {
   private Reflector() { }
 
   /**
-   * Changes a given field of an object instance via reflection, bypassing the
+   * Sets a given field of an object instance via reflection, bypassing the
    * private modifier.
    *
    * @param obj an <code>Object</code> instance to change
    * @param fieldName a <code>String</code> the name of the field to change
    * @param newVal an <code>Object</code> the new value for the field
    */
-  public static void setField(
-      final Object obj,
-      final String fieldName,
-      final Object newVal) {
-        try {
-          setField(obj.getClass(), obj, fieldName, newVal);
-        } catch (NoSuchFieldException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        } catch (IllegalArgumentException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        } catch (IllegalAccessException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        }
+  public static void setField(final Object obj, final String fieldName,
+                              final Object newVal) {
+    try {
+      setField(obj.getClass(), obj, fieldName, newVal);
+    } catch (NoSuchFieldException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalArgumentException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalAccessException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    }
+  }
+
+  /**
+   * Sets a given static field of a class via reflection, bypassing the
+   * private modifier.
+   *
+   * @param <T> type parameter of the class
+   * @param c the <code>Class</code> of the static field to set
+   * @param fieldName a <code>String</code> the name of the field to change
+   * @param newVal an <code>Object</code> the new value for the field
+   */
+  public static <T> void setStaticField(final Class<T> c,
+                                        final String fieldName,
+                                        final Object newVal) {
+    try {
+      setField(c, null, fieldName, newVal);
+    } catch (NoSuchFieldException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalArgumentException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    } catch (IllegalAccessException e) {
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+    }
   }
 
   /**
@@ -74,11 +95,10 @@ public final class Reflector {
    *     subclass or implementor thereof), or if an unwrapping conversion fails.
    * @exception IllegalAccessException if an error occurs
    */
-  private static <T> void setField(
-          final Class<T> c, final Object o, final String fieldName,
-          final Object newVal) throws
-          NoSuchFieldException, IllegalArgumentException,
-          IllegalAccessException {
+  private static <T> void setField(final Class<T> c, final Object o,
+                                   final String fieldName, final Object newVal)
+      throws NoSuchFieldException, IllegalArgumentException,
+             IllegalAccessException {
 
     if (c == null) {
       throw new NoSuchFieldException();
@@ -99,8 +119,8 @@ public final class Reflector {
       // remove final modifier
       Field modifiersField = Field.class.getDeclaredField("modifiers");
       modifiersField.setAccessible(true);
-      modifiersField
-        .setInt(property, property.getModifiers() & ~Modifier.FINAL);
+      modifiersField.setInt(property,
+                            property.getModifiers() & ~Modifier.FINAL);
       try {
         property.set(o, newVal);
       } catch (IllegalAccessException ex) {
