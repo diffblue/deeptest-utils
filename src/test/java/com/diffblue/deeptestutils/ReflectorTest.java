@@ -189,4 +189,54 @@ public class ReflectorTest {
 
   }
 
+  @org.junit.Test
+  public void toThrowableClassThrowable() {
+      // Arrange
+      String testClassName = "java.lang.Throwable";
+      Class expectedClass = Throwable.class;
+
+      // Act
+      Class retval = Reflector.toThrowableClass(testClassName);
+
+      // Assert result
+      Assert.assertEquals(expectedClass, retval);
+  }
+
+  @org.junit.Test
+  public void toThrowableClassSubClassofThrowable() {
+      // Arrange
+      String testClassName = "java.lang.Exception";
+      Class expectedClass = Exception.class;
+
+      // Act
+      Class retval = Reflector.toThrowableClass(testClassName);
+
+      // Assert result
+      Assert.assertEquals(expectedClass, retval);
+  }
+
+  @org.junit.Test
+  public void toThrowableClassPrivateSubClassofThrowable()
+          throws ClassNotFoundException{
+      // Arrange
+      String testClassName = "com.diffblue.deeptestutils.PublicException$PrivateInnerException";
+      Class expectedClass = Class.forName("com.diffblue.deeptestutils.PublicException$PrivateInnerException");
+
+      // Act
+      Class retval = Reflector.toThrowableClass(testClassName);
+
+      // Assert result
+      Assert.assertEquals(expectedClass, retval);
+  }
+
+  @org.junit.Test
+  public void toThrowableClassNotException() {
+      // Arrange
+      String testClassName = "java.lang.String";
+
+      // Act
+      thrown.expect(DeeptestUtilsRuntimeException.class);
+      Class retval = Reflector.toThrowableClass(testClassName);
+  }
+
 }
