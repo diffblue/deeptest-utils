@@ -262,7 +262,7 @@ public final class Reflector {
   }
 
   /**
-   * Returns class of exception or Throwable.
+   * Returns the Class of an Object if it extends or implements Throwable.
    *
    * @param className name of class as <code>String</code>
    * @return the <code>Class</code> object
@@ -272,7 +272,7 @@ public final class Reflector {
       final String className) {
     final Class throwableClass = Throwable.class;
     Class<?> cl = forName(className);
-    if (cl.isAssignableFrom(throwableClass)) {
+    if (throwableClass.isAssignableFrom(cl)) {
       return (Class<? extends Throwable>) cl;
     } else {
       throw

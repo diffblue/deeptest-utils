@@ -1,3 +1,7 @@
+1.6.0
+=====
+* [TG-3765] Fix check in toThrowableClass
+
 1.5.0
 =====
 * Add a method to Reflector to set a static field of a class
