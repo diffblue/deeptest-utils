@@ -95,7 +95,7 @@ public final class Reflector {
    *     subclass or implementor thereof), or if an unwrapping conversion fails.
    * @exception IllegalAccessException if an error occurs
    */
-  private static <T> void setField(final Class<T> c, final Object o,
+  public static <T> void setField(final Class<T> c, final Object o,
                                    final String fieldName, final Object newVal)
       throws NoSuchFieldException, IllegalArgumentException,
              IllegalAccessException {
