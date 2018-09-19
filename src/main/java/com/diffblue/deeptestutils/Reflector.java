@@ -124,7 +124,8 @@ public final class Reflector {
       try {
         property.set(o, newVal);
       } catch (IllegalAccessException ex) {
-        throw new RuntimeException(ex); // Should never happen.
+        // Should never happen.
+        throw new DeeptestUtilsRuntimeException(ex.getMessage(), ex.getCause());
       }
     }
   }
