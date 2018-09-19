@@ -91,8 +91,9 @@ public final class Reflector {
                                   final String fieldName, final Object newVal) {
 
     if (c == null) {
-      final NoSuchFieldException e = new NoSuchFieldException();
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      throw new DeeptestUtilsRuntimeException(
+          "Class of the field to be set cannot be null.",
+          (new NoSuchFieldException()).getCause());
     }
     Field field = null;
     for (Field f : c.getDeclaredFields()) {
