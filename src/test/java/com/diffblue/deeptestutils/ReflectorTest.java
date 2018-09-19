@@ -152,7 +152,7 @@ public class ReflectorTest {
       Object newVal = null;
 
       /* Act */
-      thrown.expect(NoSuchFieldException.class);
+      thrown.expect(DeeptestUtilsRuntimeException.class);
       try {
         Class<?> c0 = Reflector.forName("com.diffblue.deeptestutils.Reflector");
         Method m = c0.getDeclaredMethod("setField", Reflector.forName("java.lang.Class"), Reflector.forName("java.lang.Object"), Reflector.forName("java.lang.String"), Reflector.forName("java.lang.Object"));
