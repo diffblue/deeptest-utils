@@ -47,11 +47,7 @@ public final class Reflector {
                               final Object newVal) {
     try {
       setField(obj.getClass(), obj, fieldName, newVal);
-    } catch (NoSuchFieldException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     } catch (IllegalArgumentException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-    } catch (IllegalAccessException e) {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
   }
@@ -70,11 +66,7 @@ public final class Reflector {
                                         final Object newVal) {
     try {
       setField(c, null, fieldName, newVal);
-    } catch (NoSuchFieldException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     } catch (IllegalArgumentException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-    } catch (IllegalAccessException e) {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
   }
@@ -96,12 +88,11 @@ public final class Reflector {
    * @exception IllegalAccessException if an error occurs
    */
   public static <T> void setField(final Class<T> c, final Object o,
-                                   final String fieldName, final Object newVal)
-      throws NoSuchFieldException, IllegalArgumentException,
-             IllegalAccessException {
+                                  final String fieldName, final Object newVal) {
 
     if (c == null) {
-      throw new NoSuchFieldException();
+      final NoSuchFieldException e = new NoSuchFieldException();
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
     Field field = null;
     for (Field f : c.getDeclaredFields()) {
@@ -117,10 +108,19 @@ public final class Reflector {
       property.setAccessible(true);
 
       // remove final modifier
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
+      Field modifiersField;
+      try {
+        modifiersField = Field.class.getDeclaredField("modifiers");
+      } catch (NoSuchFieldException e) {
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
       modifiersField.setAccessible(true);
-      modifiersField.setInt(property,
-                            property.getModifiers() & ~Modifier.FINAL);
+      try {
+        modifiersField.setInt(property,
+                              property.getModifiers() & ~Modifier.FINAL);
+      } catch (IllegalAccessException e) {
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
       try {
         property.set(o, newVal);
       } catch (IllegalAccessException ex) {
