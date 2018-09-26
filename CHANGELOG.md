@@ -1,3 +1,7 @@
+1.7.1
+=====
+* Update version number in pom file properly.
+
 1.7.0
 =====
 * [TG-4312] Expose private overload of `setField`
