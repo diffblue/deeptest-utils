@@ -1,3 +1,8 @@
+1.8.0
+=====
+* Downgrade Powermock from 1.6.6 to 1.6.5
+* Introduce DTUMemberMatcher class to deal with PowerMockito issues.
+
 1.7.1
 =====
 * Update version number in pom file properly.
