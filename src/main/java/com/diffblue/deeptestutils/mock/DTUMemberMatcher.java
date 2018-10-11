@@ -121,6 +121,10 @@ class MethodComparatorFull implements Comparator<Method> {
   private Comparator<Method> argOnlyComparator =
       ComparatorFactory.createMethodComparator();
 
+  /**
+   * @return -1, 0, or 1 if the first argument is more specific, as specific,
+   *         or less specific than the second argument, respectively.
+   */
   @Override
   public int compare(final Method m1, final Method m2) {
     // first try to decide order based on arguments
