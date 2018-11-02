@@ -170,7 +170,7 @@ public class MethodMatcherTest {
     // verify that we find the correct method according to Java language specification
     Assert.assertEquals(parent.argSubtype(child).toString(), s5);
     // verify that the matched method returns what we expect it to return
-    Assert.assertEquals("4", s6);
+    Assert.assertEquals("4", s5);
   }
 
   @org.junit.Test

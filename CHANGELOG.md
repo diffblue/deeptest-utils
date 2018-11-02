@@ -1,3 +1,7 @@
+1.8.1
+=====
+* Work around Maven Surefire plugin bug
+
 1.8.0
 =====
 * Downgrade Powermock from 1.6.6 to 1.6.5
