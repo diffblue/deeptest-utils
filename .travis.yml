@@ -1,45 +1,15 @@
 addons:
   apt:
     packages:
-      - openjdk-6-jdk
       - openjdk-7-jdk
 
 language: java
 
 matrix:
   include:
-  - jdk: openjdk6
-    env: CUSTOM_MVN_VERION="3.2.5"
   - jdk: openjdk7
   - jdk: openjdk8
   - jdk: oraclejdk8
 
-
-# `mvn` version 3.2.5 is the last that supports Java6, therefore we need to get
-# that version for the openjdk6 build.
-# cf. https://github.com/travis-ci/enterprise-installation/issues/14#issuecomment-329983790
-
 install:
-  - |
-    # Install custom version of Maven
-    set -eo pipefail
-    if [[ -n "${CUSTOM_MVN_VERION}" ]]; then
-      wget -O- "https://archive.apache.org/dist/maven/maven-3/${CUSTOM_MVN_VERION}/binaries/apache-maven-${CUSTOM_MVN_VERION}-bin.tar.gz" | tar -C "${HOME}" -xz
-      export M2_HOME="${HOME}/apache-maven-${CUSTOM_MVN_VERION}"
-      export PATH="${M2_HOME}/bin:${PATH}"
-      echo "
-        <settings>
-          <mirrors>
-            <mirror>
-              <id>HTTP fallback</id>
-              <name>Maven repo1</name>
-              <url>http://repo1.maven.org/maven2/</url>
-              <mirrorOf>central</mirrorOf>
-            </mirror>
-          </mirrors>
-        </settings>
-      " > "${HOME}/.m2/settings.xml"
-    fi
-    set +eo pipefail
-
   - mvn -version
