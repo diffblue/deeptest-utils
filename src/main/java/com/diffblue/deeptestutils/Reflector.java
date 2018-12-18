@@ -321,7 +321,7 @@ public final class Reflector {
   /**
    * Sets class flag to public.
    *
-   * @param c the class as to make public
+   * @param c the class to make public
    */
   private static void makePublic(final CtClass c) {
     int modifier = c.getModifiers();
