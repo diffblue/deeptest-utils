@@ -391,11 +391,8 @@ public final class Reflector {
     // we consider a class abstract if any method has no body
     if (isAbstract(cl) || cl.isInterface()) {
       makeFullyPublic(cl);
-
-      String packageName = "com.diffblue.test_gen.";
-      String newClassName = packageName
+      String newClassName = "com.diffblue.cover"
           + removePackageFromName(className);
-
       CtClass implementation = pool.getOrNull(newClassName
           + "_implementation");
       if (implementation == null) {
