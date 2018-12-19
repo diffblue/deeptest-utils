@@ -386,8 +386,6 @@ public final class Reflector {
     } catch (NotFoundException e) {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
-
-    // we consider a class abstract if any method has no body
     if (isAbstract(cl) || cl.isInterface()) {
       makeFullyPublic(cl);
       String implementingClassName = "com.diffblue.cover"
@@ -432,17 +430,6 @@ public final class Reflector {
   }
 
   /**
-   * Checks whether the <code>ABSTRACT</code> flag of a method is set.
-   *
-   * @param m the method to check
-   * @return a <code>boolean</code> value indicating whether the method is
-   * abstract.
-   */
-  private static boolean isAbstract(final CtMethod m) {
-    return ((m.getModifiers() & javassist.Modifier.ABSTRACT) != 0);
-  }
-
-  /**
    * Checks whether the <code>ABSTRACT</code> flag of a class is set.
    *
    * @param c the class to check
@@ -450,14 +437,6 @@ public final class Reflector {
    * abstract.
    */
   private static boolean isAbstract(final CtClass c) {
-    if ((c.getModifiers() & javassist.Modifier.ABSTRACT) != 0) {
-      return true;
-    }
-    for (CtMethod m : c.getDeclaredMethods()) {
-      if (isAbstract(m)) {
-        return true;
-      }
-    }
-    return false;
+    return (c.getModifiers() & javassist.Modifier.ABSTRACT) != 0;
   }
 }
