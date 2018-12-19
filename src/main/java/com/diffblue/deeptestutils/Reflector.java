@@ -1,6 +1,5 @@
 package com.diffblue.deeptestutils;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -13,7 +12,6 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
-import javassist.CtNewConstructor;
 import javassist.CtNewMethod;
 import javassist.NotFoundException;
 
@@ -334,40 +332,14 @@ public final class Reflector {
   }
 
   /**
-   * This forces the creation of an instance for a given class. If the class
-   * provides a public default constructor, it is called. If the class has a
-   * private default constructor, it is made accessible and is then called. Else
-   * we use Objenesis to force creation of an instance.
-   *
-   * There are several exceptions that `Constructor.newInstance` can throw. We
-   * catch `IllegalAccessException` and `InstantiationException` and continue
-   * with Objenesis in those cases. `IllegalArgumentException` cannot be thrown
-   * as we only try to use the default constructor which has no parameters. An
-   * `InvocationTargetException` signals an exception in the constructor and is
-   * passed to the calling method.
+   * This forces the creation of an instance for a given class using Objenesis.
    *
    * @param <T> type parameter of the class
    * @param cl a <code>Class</code> the class to instantiate
    * @return an <code>Object</code> which is an instance of the specified class
-   *
-   * @throws InvocationTargetException if the default constructor or a static
-   * initializer throws an exception.
    */
   @SuppressWarnings("unchecked")
-  public static <T> T getInstance(final Class<T> cl)
-    throws InvocationTargetException {
-    Constructor<?> ctor = getDefaultConstructor(cl);
-    if (ctor != null) {
-      Constructor<?> defaultCtor = ctor;
-      defaultCtor.setAccessible(true);
-      try {
-        return (T) defaultCtor.newInstance();
-      } catch (InstantiationException ex) {
-        return (T) new ObjenesisStd().newInstance(cl);
-      } catch (IllegalAccessException ex) {
-        return (T) new ObjenesisStd().newInstance(cl);
-      }
-    }
+  public static <T> T getInstance(final Class<T> cl) {
     return (T) new ObjenesisStd().newInstance(cl);
   }
 
@@ -378,12 +350,11 @@ public final class Reflector {
    * @param className a <code>String</code> giving the name of the class
    * @return an <code>Object</code> which is an instance of the specified class
    *
-   * @throws InvocationTargetException if the constructor of a class
-   * throws an exception
-   *
-   * In the case of an `ExceptionInInitializerError` from `newInstance`, which
-   * signals an exception in a static initializer, we extract its cause and
-   * throw an `InvocationTargetException`.
+   * @throws InvocationTargetException if an `ExceptionInInitializerError` was
+   *   thrown by Class.forName, which signals an exception in the static
+   *   initializer of the class. In this case we extract the cause of the error
+   *   and wrap it within an `InvocationTargetException`.
+   *   TODO This currently only works for concrete classes, see TG-5895.
    */
   public static <T> Object getInstance(final String className)
       throws InvocationTargetException {
@@ -422,47 +393,6 @@ public final class Reflector {
           } else {
             try {
               implementation.setSuperclass(cl);
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-          }
-
-          // In the case of an abstract class, search any constructor in
-          //  the superclass and add an empty one with the same types.
-          // The class must have a constructor.
-          if (!cl.isInterface()) {
-            try {
-              CtConstructor[] ctors = cl.getConstructors();
-              if (ctors.length > 0) {
-                CtConstructor newCtor =
-                  CtNewConstructor.make(
-                    ctors[0].getParameterTypes(),
-                    ctors[0].getExceptionTypes(),
-                    implementation);
-                  implementation.addConstructor(newCtor);
-              } else {
-                throw new DeeptestUtilsRuntimeException(
-                  "Cannot find constructor in abstract class",
-                  new NotFoundException(
-                      "Cannot find constructor in abstract class"));
-              }
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            } catch (NotFoundException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-
-          } else {
-            // in the case of an interface, simply add a default
-            // constructor
-            try {
-              CtConstructor newCtor =
-                  new CtConstructor(new CtClass[] {}, implementation);
-              newCtor.setBody("{}");
-              implementation.addConstructor(newCtor);
             } catch (CannotCompileException e) {
               throw new
                   DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
@@ -550,22 +480,5 @@ public final class Reflector {
       }
     }
     return false;
-  }
-
-  /**
-   * Returns the default constructor if one exists.
-   *
-   * @param c the class to search the constructor in
-   * @return a value holding a <code>Constructor</code>
-   *     object if it exists, else null
-   */
-  private static Constructor<?> getDefaultConstructor(
-      final Class<?> c) {
-    for (Constructor ctor : c.getDeclaredConstructors()) {
-      if (ctor.getParameterTypes().length == 0) {
-        return ctor;
-      }
-    }
-    return null;
   }
 }
