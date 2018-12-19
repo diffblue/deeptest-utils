@@ -391,13 +391,12 @@ public final class Reflector {
     // we consider a class abstract if any method has no body
     if (isAbstract(cl) || cl.isInterface()) {
       makeFullyPublic(cl);
-      String newClassName = "com.diffblue.cover"
-          + removePackageFromName(className);
-      CtClass implementation = pool.getOrNull(newClassName
-          + "_implementation");
+      String implementingClassName = "com.diffblue.cover"
+          + removePackageFromName(className) + "Impl";
+      CtClass implementation = pool.getOrNull(implementingClassName);
+
       if (implementation == null) {
-        implementation = pool.makeClass(newClassName
-            + "_implementation");
+        implementation = pool.makeClass(implementingClassName);
 
         if (cl.isInterface()) {
           implementation.setInterfaces(new CtClass[] {cl });
@@ -434,7 +433,7 @@ public final class Reflector {
 
         try {
           Class<?> ic = pool.toClass(implementation);
-          classMap.put(newClassName + "_implementation", ic);
+          classMap.put(implementingClassName, ic);
           return getInstance(ic);
         } catch (CannotCompileException e) {
           throw new
@@ -442,8 +441,7 @@ public final class Reflector {
         }
 
       } else {
-        return getInstance((Class<?>) classMap
-          .get(newClassName + "_implementation"));
+        return getInstance((Class<?>) classMap.get(implementingClassName));
       }
     } else {
       // If an error in the static initializer is thrown, we catch
