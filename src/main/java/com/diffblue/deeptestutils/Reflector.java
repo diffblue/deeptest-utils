@@ -407,14 +407,15 @@ public final class Reflector {
                 DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
           }
         }
+        Class<?> ic;
         try {
-          Class<?> ic = pool.toClass(implementation);
-          classMap.put(implementingClassName, ic);
-          return getInstance(ic);
+          ic = pool.toClass(implementation);
         } catch (CannotCompileException e) {
           throw new
               DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
         }
+        classMap.put(implementingClassName, ic);
+        return getInstance(ic);
 
       } else {
         return getInstance((Class<?>) classMap.get(implementingClassName));
