@@ -393,33 +393,29 @@ public final class Reflector {
       String implementingClassName = "com.diffblue.cover"
           + removePackageFromName(className) + "Impl";
       CtClass implementingCtClass = pool.getOrNull(implementingClassName);
-
-      if (implementingCtClass == null) {
-        implementingCtClass = pool.makeClass(implementingClassName);
-
-        if (cl.isInterface()) {
-          implementingCtClass.setInterfaces(new CtClass[] {cl });
-        } else {
-          try {
-            implementingCtClass.setSuperclass(cl);
-          } catch (CannotCompileException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          }
-        }
-        Class<?> implementingClass;
+      if (implementingCtClass != null) {
+        return getInstance((Class<?>) classMap.get(implementingClassName));
+      }
+      implementingCtClass = pool.makeClass(implementingClassName);
+      if (cl.isInterface()) {
+        implementingCtClass.setInterfaces(new CtClass[] {cl });
+      } else {
         try {
-          implementingClass = pool.toClass(implementingCtClass);
+          implementingCtClass.setSuperclass(cl);
         } catch (CannotCompileException e) {
           throw new
               DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
         }
-        classMap.put(implementingClassName, implementingClass);
-        return getInstance(implementingClass);
-
-      } else {
-        return getInstance((Class<?>) classMap.get(implementingClassName));
       }
+      Class<?> implementingClass;
+      try {
+        implementingClass = pool.toClass(implementingCtClass);
+      } catch (CannotCompileException e) {
+        throw new
+            DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
+      classMap.put(implementingClassName, implementingClass);
+      return getInstance(implementingClass);
     } else {
       // If an error in the static initializer is thrown, we catch
       // the resulting `ExceptionInInitializerError` and wrap its
