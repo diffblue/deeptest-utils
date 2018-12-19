@@ -12,7 +12,6 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
-import javassist.CtNewMethod;
 import javassist.NotFoundException;
 
 import org.objenesis.ObjenesisStd;
@@ -408,29 +407,6 @@ public final class Reflector {
                 DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
           }
         }
-
-        // declared methods or only methods ?
-        try {
-          for (CtMethod m : cl.getDeclaredMethods()) {
-            if (isAbstract(m)) {
-              CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
-                                                 m.getReturnType(),
-                                                 m.getName(),
-                                                 m.getParameterTypes(),
-                                                 m.getExceptionTypes(),
-                                                 null,
-                                                 implementation);
-              implementation.addMethod(method);
-            }
-          }
-        } catch (CannotCompileException e) {
-          throw new
-              DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        } catch (NotFoundException e) {
-          throw new
-              DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        }
-
         try {
           Class<?> ic = pool.toClass(implementation);
           classMap.put(implementingClassName, ic);
