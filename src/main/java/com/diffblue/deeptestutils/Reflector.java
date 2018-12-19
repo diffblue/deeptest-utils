@@ -332,6 +332,28 @@ public final class Reflector {
   }
 
   /**
+   * Sets the flag of the given class and all of its fields, methods and
+   * constructors to public.
+   * We use this on abstract classes and interfaces so that our newly
+   * constructed implementing classes in Reflector.getInstance can inherit from
+   * them.
+   *
+   * @param cl the class to make public
+   */
+  private static void makeFullyPublic(final CtClass cl) {
+    for (CtMethod m : cl.getDeclaredMethods()) {
+      makePublic(m);
+    }
+    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+      makePublic(ctor);
+    }
+    for (CtField f : cl.getDeclaredFields()) {
+      makePublic(f);
+    }
+    makePublic(cl);
+  }
+
+  /**
    * This forces the creation of an instance for a given class using Objenesis.
    *
    * @param <T> type parameter of the class
@@ -368,19 +390,7 @@ public final class Reflector {
 
     // we consider a class abstract if any method has no body
     if (isAbstract(cl) || cl.isInterface()) {
-      for (CtMethod m : cl.getDeclaredMethods()) {
-        makePublic(m);
-      }
-
-      for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-        makePublic(ctor);
-      }
-
-      for (CtField f : cl.getDeclaredFields()) {
-        makePublic(f);
-      }
-
-      makePublic(cl);
+      makeFullyPublic(cl);
 
       String packageName = "com.diffblue.test_gen.";
       String newClassName = packageName
