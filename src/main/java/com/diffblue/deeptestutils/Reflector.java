@@ -366,22 +366,22 @@ public final class Reflector {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
 
-    for (CtMethod m : cl.getDeclaredMethods()) {
-      makePublic(m);
-    }
-
-    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-      makePublic(ctor);
-    }
-
-    for (CtField f : cl.getDeclaredFields()) {
-      makePublic(f);
-    }
-
-    makePublic(cl);
-
     // we consider a class abstract if any method has no body
     if (isAbstract(cl) || cl.isInterface()) {
+      for (CtMethod m : cl.getDeclaredMethods()) {
+        makePublic(m);
+      }
+
+      for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+        makePublic(ctor);
+      }
+
+      for (CtField f : cl.getDeclaredFields()) {
+        makePublic(f);
+      }
+
+      makePublic(cl);
+
       String packageName = "com.diffblue.test_gen.";
       String newClassName = packageName
           + removePackageFromName(className);
