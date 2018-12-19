@@ -149,9 +149,7 @@ public class ReflectorGetInstanceTest {
   // When we call Reflector.getInstance on an abstract class whose static
   // initialiser throws an exception, it should wrap this exception within an
   // InvocationTargetException.
-  // TODO Fix this (TG-5895) and enable this test.
   @Test
-  @Ignore
   public void abstractClassWithBadStaticInit() throws Throwable {
     try {
       Reflector.getInstance(
