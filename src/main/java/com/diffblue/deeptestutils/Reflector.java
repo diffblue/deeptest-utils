@@ -392,30 +392,30 @@ public final class Reflector {
       makeFullyPublic(cl);
       String implementingClassName = "com.diffblue.cover"
           + removePackageFromName(className) + "Impl";
-      CtClass implementation = pool.getOrNull(implementingClassName);
+      CtClass implementingCtClass = pool.getOrNull(implementingClassName);
 
-      if (implementation == null) {
-        implementation = pool.makeClass(implementingClassName);
+      if (implementingCtClass == null) {
+        implementingCtClass = pool.makeClass(implementingClassName);
 
         if (cl.isInterface()) {
-          implementation.setInterfaces(new CtClass[] {cl });
+          implementingCtClass.setInterfaces(new CtClass[] {cl });
         } else {
           try {
-            implementation.setSuperclass(cl);
+            implementingCtClass.setSuperclass(cl);
           } catch (CannotCompileException e) {
             throw new
                 DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
           }
         }
-        Class<?> ic;
+        Class<?> implementingClass;
         try {
-          ic = pool.toClass(implementation);
+          implementingClass = pool.toClass(implementingCtClass);
         } catch (CannotCompileException e) {
           throw new
               DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
         }
-        classMap.put(implementingClassName, ic);
-        return getInstance(ic);
+        classMap.put(implementingClassName, implementingClass);
+        return getInstance(implementingClass);
 
       } else {
         return getInstance((Class<?>) classMap.get(implementingClassName));
