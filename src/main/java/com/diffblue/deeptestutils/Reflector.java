@@ -12,7 +12,6 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
-import javassist.CtNewMethod;
 import javassist.NotFoundException;
 
 import org.objenesis.ObjenesisStd;
@@ -321,7 +320,7 @@ public final class Reflector {
   /**
    * Sets class flag to public.
    *
-   * @param c the class as to make public
+   * @param c the class to make public
    */
   private static void makePublic(final CtClass c) {
     int modifier = c.getModifiers();
@@ -329,6 +328,28 @@ public final class Reflector {
                             | javassist.Modifier.PROTECTED);
     modifier = modifier | javassist.Modifier.PUBLIC;
     c.setModifiers(modifier);
+  }
+
+  /**
+   * Sets the flag of the given class and all of its fields, methods and
+   * constructors to public.
+   * We use this on abstract classes and interfaces so that our newly
+   * constructed implementing classes in Reflector.getInstance can inherit from
+   * them.
+   *
+   * @param cl the class to make public
+   */
+  private static void makeFullyPublic(final CtClass cl) {
+    for (CtMethod m : cl.getDeclaredMethods()) {
+      makePublic(m);
+    }
+    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+      makePublic(ctor);
+    }
+    for (CtField f : cl.getDeclaredFields()) {
+      makePublic(f);
+    }
+    makePublic(cl);
   }
 
   /**
@@ -358,109 +379,54 @@ public final class Reflector {
    */
   public static <T> Object getInstance(final String className)
       throws InvocationTargetException {
+    ClassPool pool = ClassPool.getDefault();
+    CtClass cl;
     try {
-      ClassPool pool = ClassPool.getDefault();
-      CtClass cl = pool.get(className);
-
-      for (CtMethod m : cl.getDeclaredMethods()) {
-        makePublic(m);
-      }
-
-      for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-        makePublic(ctor);
-      }
-
-      for (CtField f : cl.getDeclaredFields()) {
-        makePublic(f);
-      }
-
-      makePublic(cl);
-
-      // we consider a class abstract if any method has no body
-      if (isAbstract(cl) || cl.isInterface()) {
-        String packageName = "com.diffblue.test_gen.";
-        String newClassName = packageName
-            + removePackageFromName(className);
-
-        CtClass implementation = pool.getOrNull(newClassName
-            + "_implementation");
-        if (implementation == null) {
-          implementation = pool.makeClass(newClassName
-              + "_implementation");
-
-          if (cl.isInterface()) {
-            implementation.setInterfaces(new CtClass[] {cl });
-          } else {
-            try {
-              implementation.setSuperclass(cl);
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-          }
-
-          // declared methods or only methods ?
-          try {
-            for (CtMethod m : cl.getDeclaredMethods()) {
-              if (isAbstract(m)) {
-                CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
-                                                   m.getReturnType(),
-                                                   m.getName(),
-                                                   m.getParameterTypes(),
-                                                   m.getExceptionTypes(),
-                                                   null,
-                                                   implementation);
-                implementation.addMethod(method);
-              }
-            }
-          } catch (CannotCompileException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          } catch (NotFoundException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          }
-
-          try {
-            Class<?> ic = pool.toClass(implementation);
-            classMap.put(newClassName + "_implementation", ic);
-            return getInstance(ic);
-          } catch (CannotCompileException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          }
-
-        } else {
-          return getInstance((Class<?>) classMap
-            .get(newClassName + "_implementation"));
-        }
-      } else {
-        // If an error in the static initializer is thrown, we catch
-        // the resulting `ExceptionInInitializerError` and wrap its
-        // cause in an `InvocationTargetException`. This is done here as
-        // the static init is executed when calling `.forName`.
-        try {
-          return getInstance(Class.forName(className));
-        } catch (ExceptionInInitializerError ex) {
-          throw new InvocationTargetException(ex.getCause());
-        } catch (ClassNotFoundException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        }
-      }
+      cl = pool.get(className);
     } catch (NotFoundException e) {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
-  }
-
-  /**
-   * Checks whether the <code>ABSTRACT</code> flag of a method is set.
-   *
-   * @param m the method to check
-   * @return a <code>boolean</code> value indicating whether the method is
-   * abstract.
-   */
-  private static boolean isAbstract(final CtMethod m) {
-    return ((m.getModifiers() & javassist.Modifier.ABSTRACT) != 0);
+    if (isAbstract(cl) || cl.isInterface()) {
+      makeFullyPublic(cl);
+      String implementingClassName = "com.diffblue.cover"
+          + removePackageFromName(className) + "Impl";
+      CtClass implementingCtClass = pool.getOrNull(implementingClassName);
+      if (implementingCtClass != null) {
+        return getInstance((Class<?>) classMap.get(implementingClassName));
+      }
+      implementingCtClass = pool.makeClass(implementingClassName);
+      if (cl.isInterface()) {
+        implementingCtClass.setInterfaces(new CtClass[] {cl });
+      } else {
+        try {
+          implementingCtClass.setSuperclass(cl);
+        } catch (CannotCompileException e) {
+          throw new
+              DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        }
+      }
+      Class<?> implementingClass;
+      try {
+        implementingClass = pool.toClass(implementingCtClass);
+      } catch (CannotCompileException e) {
+        throw new
+            DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
+      classMap.put(implementingClassName, implementingClass);
+      return getInstance(implementingClass);
+    } else {
+      // If an error in the static initializer is thrown, we catch
+      // the resulting `ExceptionInInitializerError` and wrap its
+      // cause in an `InvocationTargetException`. This is done here as
+      // the static init is executed when calling `.forName`.
+      try {
+        return getInstance(Class.forName(className));
+      } catch (ExceptionInInitializerError ex) {
+        throw new InvocationTargetException(ex.getCause());
+      } catch (ClassNotFoundException e) {
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
+    }
   }
 
   /**
@@ -471,14 +437,6 @@ public final class Reflector {
    * abstract.
    */
   private static boolean isAbstract(final CtClass c) {
-    if ((c.getModifiers() & javassist.Modifier.ABSTRACT) != 0) {
-      return true;
-    }
-    for (CtMethod m : c.getDeclaredMethods()) {
-      if (isAbstract(m)) {
-        return true;
-      }
-    }
-    return false;
+    return (c.getModifiers() & javassist.Modifier.ABSTRACT) != 0;
   }
 }
