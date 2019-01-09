@@ -358,10 +358,19 @@ public final class Reflector {
    * @param <T> type parameter of the class
    * @param cl a <code>Class</code> the class to instantiate
    * @return an <code>Object</code> which is an instance of the specified class
+   *
+   * @throws InvocationTargetException if an `ExceptionInInitializerError` was
+   *   thrown by ObjenesisStd.newInstance.
+   *   See {@link #getInstance(String) getInstance}.
    */
   @SuppressWarnings("unchecked")
-  public static <T> T getInstance(final Class<T> cl) {
-    return (T) new ObjenesisStd().newInstance(cl);
+  public static <T> T getInstance(final Class<T> cl)
+      throws InvocationTargetException {
+    try {
+      return (T) new ObjenesisStd().newInstance(cl);
+    } catch (ExceptionInInitializerError ex) {
+      throw new InvocationTargetException(ex.getCause());
+    }
   }
 
   /**
@@ -372,10 +381,12 @@ public final class Reflector {
    * @return an <code>Object</code> which is an instance of the specified class
    *
    * @throws InvocationTargetException if an `ExceptionInInitializerError` was
-   *   thrown by Class.forName, which signals an exception in the static
-   *   initializer of the class. In this case we extract the cause of the error
-   *   and wrap it within an `InvocationTargetException`.
-   *   TODO This currently only works for concrete classes, see TG-5895.
+   *   thrown, which signals an exception in the static initializer of the
+   *   class. Such an error could be thrown by Class.forName or
+   *   Objenesis.newInstance, both of which call the static initializer (for
+   *   the latter, see {@link #getInstance(Class) getInstance}.
+   *   We extract the cause of the error and wrap it within an
+   *   `InvocationTargetException`.
    */
   public static <T> Object getInstance(final String className)
       throws InvocationTargetException {
@@ -415,10 +426,6 @@ public final class Reflector {
       classMap.put(implementingClassName, implementingClass);
       return getInstance(implementingClass);
     } else {
-      // If an error in the static initializer is thrown, we catch
-      // the resulting `ExceptionInInitializerError` and wrap its
-      // cause in an `InvocationTargetException`. This is done here as
-      // the static init is executed when calling `.forName`.
       try {
         return getInstance(Class.forName(className));
       } catch (ExceptionInInitializerError ex) {
