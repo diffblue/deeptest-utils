@@ -45,7 +45,7 @@ public final class Reflector {
     try {
       setField(obj.getClass(), obj, fieldName, newVal);
     } catch (IllegalArgumentException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
     }
   }
 
@@ -64,7 +64,7 @@ public final class Reflector {
     try {
       setField(c, null, fieldName, newVal);
     } catch (IllegalArgumentException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
     }
   }
 
@@ -89,8 +89,7 @@ public final class Reflector {
 
     if (c == null) {
       throw new DeeptestUtilsRuntimeException(
-          "Class of the field to be set cannot be null.",
-          (new NoSuchFieldException()).getCause());
+          "Class of the field to be set cannot be null.", null);
     }
     Field field = null;
     for (Field f : c.getDeclaredFields()) {
@@ -110,20 +109,20 @@ public final class Reflector {
       try {
         modifiersField = Field.class.getDeclaredField("modifiers");
       } catch (NoSuchFieldException e) {
-        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
       }
       modifiersField.setAccessible(true);
       try {
         modifiersField.setInt(property,
                               property.getModifiers() & ~Modifier.FINAL);
       } catch (IllegalAccessException e) {
-        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
       }
       try {
         property.set(o, newVal);
       } catch (IllegalAccessException ex) {
         // Should never happen.
-        throw new DeeptestUtilsRuntimeException(ex.getMessage(), ex.getCause());
+        throw new DeeptestUtilsRuntimeException(ex.getMessage(), ex);
       }
     }
   }
@@ -161,9 +160,9 @@ public final class Reflector {
         try {
           return property.get(o);
         } catch (IllegalArgumentException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
         } catch (IllegalAccessException e) { // Should never happen.
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+          throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
         }
       }
   }
@@ -249,14 +248,14 @@ public final class Reflector {
       try {
         return Class.forName(arrayPrefix + cleanedName);
       } catch (ClassNotFoundException e) {
-        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
       }
 
     }
     try {
       return Class.forName(className);
     } catch (ClassNotFoundException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
     }
   }
 
@@ -384,7 +383,7 @@ public final class Reflector {
     try {
       cl = pool.get(className);
     } catch (NotFoundException e) {
-      throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
     }
     if (isAbstract(cl) || cl.isInterface()) {
       makeFullyPublic(cl);
@@ -402,7 +401,7 @@ public final class Reflector {
           implementingCtClass.setSuperclass(cl);
         } catch (CannotCompileException e) {
           throw new
-              DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+              DeeptestUtilsRuntimeException(e.getMessage(), e);
         }
       }
       Class<?> implementingClass;
@@ -410,7 +409,7 @@ public final class Reflector {
         implementingClass = pool.toClass(implementingCtClass);
       } catch (CannotCompileException e) {
         throw new
-            DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+            DeeptestUtilsRuntimeException(e.getMessage(), e);
       }
       classMap.put(implementingClassName, implementingClass);
       return getInstance(implementingClass);
@@ -422,9 +421,9 @@ public final class Reflector {
       try {
         return getInstance(Class.forName(className));
       } catch (ExceptionInInitializerError ex) {
-        throw new InvocationTargetException(ex.getCause());
+        throw new InvocationTargetException(ex);
       } catch (ClassNotFoundException e) {
-        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e);
       }
     }
   }

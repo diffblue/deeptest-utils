@@ -142,7 +142,8 @@ public class ReflectorGetInstanceTest {
           "com.diffblue.deeptestutils.regression.BadStaticInit");
       Assert.assertTrue(false);
     } catch (InvocationTargetException e) {
-      Assert.assertEquals(e.getCause().getClass(), NullPointerException.class);
+      Assert.assertEquals(e.getCause().getClass(), ExceptionInInitializerError.class);
+      Assert.assertEquals(e.getCause().getCause().getClass(), NullPointerException.class);
     }
   }
 
