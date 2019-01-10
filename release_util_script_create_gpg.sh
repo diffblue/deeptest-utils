@@ -23,7 +23,7 @@ gpg --batch --gen-key gen-key-script
 #gpg --quick-gen-key 'Sonny Martin <sonny.martin@diffblue.com>'
 #--------------------------------------------------------------------------------
 ## get key id
-GPG_KEYID=$(gpg -K | head -n4 | tail -n1 | tr -d ' ')
+GPG_KEYID=$( gpg --list-keys "Sonny Martin" | head -n1 | grep -Po "(?<=4096R/)[A-Z0-9]+")
 echo "key id is: ${GPG_KEYID}"
 
 echo "encrypted key id is:"
