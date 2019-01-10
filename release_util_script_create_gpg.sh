@@ -60,8 +60,8 @@ openssl enc -aes-256-cbc -pass pass:"${SSL_PWD}" -in private1.gpg -out private1.
 rm private1.gpg
 
 ## remove generated key
-gpg --batch --yes --delete-secret-keys "${GPG_KEYID}"
-gpg --batch --yes --delete-key "${GPG_KEYID}"
+gpg --delete-secret-keys "${GPG_KEYID}"
+gpg --delete-key "${GPG_KEYID}"
 
 ## cleanup local configuration
 rm gen-key-script
