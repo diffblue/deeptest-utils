@@ -59,6 +59,6 @@ fi
 #------------------------------------------------------------
 rm mvnsettingsPlainText.xml
 ## remove key from keyring, if this was a gpg key generated on the fly - then it would be gone forever.
-gpg --batch --yes --delete-secret-keys "${GPG_KEYID}"
-gpg --batch --yes --delete-key "${GPG_KEYID}"
+gpg --delete-secret-keys "${GPG_KEYID}"
+gpg --delete-key "${GPG_KEYID}"
 #------------------------------------------------------------
