@@ -10,7 +10,7 @@ SSL_PWD="$1"
 ## encoding command used of form "echo "$var" | openssl aes-256-cbc -a -salt -pass pass:${SSL_PWD} | openssl enc -A -base64"
 SONATYPETOKEN_USER_ENC="VTJGc2RHVmtYMThEV2pndXpiK3lFMmQyRDgvTmhBUllTWldac3NITDMxQT0K"
 SONATYPETOKEN_PWD_ENC="VTJGc2RHVmtYMS8vam9YR0U4dExXbmlwaC9JR094TGJvTlN2ajVhOHc4bjZOL1I1UEZXY05mWFU4N2NHdzc5WgpsWXpITkIzU3pLZ2lkY2MrQkZPMDZRPT0K"
-GPG_KEYID_ENC="VTJGc2RHVmtYMThZZzFTRFJVNUYxY3kzRmdIS1FINk5nZFU3d0VxY2daZWNkWWgyYnVnRnd1cEwzNFNVN3hOTApzancrQm1ZNnNxbmxhTXdJYStERGJRPT0K"
+GPG_KEYID_ENC="VTJGc2RHVmtYMTluRk1RUXVaRkpiMnJzS1lzdlk1U1RRRStxZDhCSDNWMD0K"
 
 decrypt_fn(){
     echo "$1" | openssl enc -A -base64 -d | openssl aes-256-cbc -d -a -pass pass:"$SSL_PWD"
