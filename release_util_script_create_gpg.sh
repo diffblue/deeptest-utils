@@ -23,7 +23,7 @@ gpg --batch --gen-key gen-key-script
 #gpg --quick-gen-key 'Sonny Martin <sonny.martin@diffblue.com>'
 #--------------------------------------------------------------------------------
 ## get key id
-GPG_KEYID=$(gpg -K | head -n4 | tail -n1 | tr -d ' ')
+GPG_KEYID=$( gpg --list-keys --with-colons "Sonny Martin" | grep "pub" | head -n1 | cut -d ':' -f5 )
 echo "key id is: ${GPG_KEYID}"
 
 echo "encrypted key id is:"
@@ -60,8 +60,8 @@ openssl enc -aes-256-cbc -pass pass:"${SSL_PWD}" -in private1.gpg -out private1.
 rm private1.gpg
 
 ## remove generated key
-gpg --batch --yes --delete-secret-keys "${GPG_KEYID}"
-gpg --batch --yes --delete-key "${GPG_KEYID}"
+gpg --delete-secret-keys "${GPG_KEYID}"
+gpg --delete-key "${GPG_KEYID}"
 
 ## cleanup local configuration
 rm gen-key-script

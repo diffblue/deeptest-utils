@@ -4,7 +4,7 @@
 
   <groupId>com.diffblue</groupId>
   <artifactId>deeptestutils</artifactId>
-  <version>1.8.1</version>
+  <version>1.9.0</version>
   <packaging>jar</packaging>
 
   <name>Deeptest-utils</name>
@@ -141,9 +141,7 @@
     <profile>
       <id>stdbuild</id>
       <activation>
-        <!-- this selects any Java7 JDK or higher, split was needed as
-             checkstyle is incompatible with JDK6 -->
-        <jdk>[1.7,)</jdk>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <build>
         <plugins>
@@ -197,49 +195,6 @@
              -->
             <configuration>
               <useSystemClassLoader>false</useSystemClassLoader>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.8</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>  <!-- nb this must be the same as the 'id' field in 'settings.xml' -->
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <!-- http://central.sonatype.org/pages/apache-maven.html#nexus-staging-maven-plugin-for-deployment-and-release -->
-              <!-- With the property autoReleaseAfterClose set to false you can manually -->
-              <!-- inspect the staging repository in the Nexus Repository Manager and trigger a -->
-              <!-- release of the staging repository later with mvn nexus-staging:release -->
-              <autoReleaseAfterClose>false</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-        <profile>
-      <id>jdk6build</id>
-      <activation>
-        <jdk>1.6</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.1</version>
-            <configuration>
-              <source>1.6</source>
-              <target>1.6</target>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>3.0.0</version>
-            <configuration>
-              <show>private</show>
-              <nohelp>true</nohelp>
             </configuration>
           </plugin>
           <plugin>

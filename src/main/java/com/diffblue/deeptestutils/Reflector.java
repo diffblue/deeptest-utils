@@ -1,6 +1,5 @@
 package com.diffblue.deeptestutils;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -13,8 +12,6 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMember;
 import javassist.CtMethod;
-import javassist.CtNewConstructor;
-import javassist.CtNewMethod;
 import javassist.NotFoundException;
 
 import org.objenesis.ObjenesisStd;
@@ -323,7 +320,7 @@ public final class Reflector {
   /**
    * Sets class flag to public.
    *
-   * @param c the class as to make public
+   * @param c the class to make public
    */
   private static void makePublic(final CtClass c) {
     int modifier = c.getModifiers();
@@ -334,41 +331,46 @@ public final class Reflector {
   }
 
   /**
-   * This forces the creation of an instance for a given class. If the class
-   * provides a public default constructor, it is called. If the class has a
-   * private default constructor, it is made accessible and is then called. Else
-   * we use Objenesis to force creation of an instance.
+   * Sets the flag of the given class and all of its fields, methods and
+   * constructors to public.
+   * We use this on abstract classes and interfaces so that our newly
+   * constructed implementing classes in Reflector.getInstance can inherit from
+   * them.
    *
-   * There are several exceptions that `Constructor.newInstance` can throw. We
-   * catch `IllegalAccessException` and `InstantiationException` and continue
-   * with Objenesis in those cases. `IllegalArgumentException` cannot be thrown
-   * as we only try to use the default constructor which has no parameters. An
-   * `InvocationTargetException` signals an exception in the constructor and is
-   * passed to the calling method.
+   * @param cl the class to make public
+   */
+  private static void makeFullyPublic(final CtClass cl) {
+    for (CtMethod m : cl.getDeclaredMethods()) {
+      makePublic(m);
+    }
+    for (CtConstructor ctor : cl.getDeclaredConstructors()) {
+      makePublic(ctor);
+    }
+    for (CtField f : cl.getDeclaredFields()) {
+      makePublic(f);
+    }
+    makePublic(cl);
+  }
+
+  /**
+   * This forces the creation of an instance for a given class using Objenesis.
    *
    * @param <T> type parameter of the class
    * @param cl a <code>Class</code> the class to instantiate
    * @return an <code>Object</code> which is an instance of the specified class
    *
-   * @throws InvocationTargetException if the default constructor or a static
-   * initializer throws an exception.
+   * @throws InvocationTargetException if an `ExceptionInInitializerError` was
+   *   thrown by ObjenesisStd.newInstance.
+   *   See {@link #getInstance(String) getInstance}.
    */
   @SuppressWarnings("unchecked")
   public static <T> T getInstance(final Class<T> cl)
-    throws InvocationTargetException {
-    Constructor<?> ctor = getDefaultConstructor(cl);
-    if (ctor != null) {
-      Constructor<?> defaultCtor = ctor;
-      defaultCtor.setAccessible(true);
-      try {
-        return (T) defaultCtor.newInstance();
-      } catch (InstantiationException ex) {
-        return (T) new ObjenesisStd().newInstance(cl);
-      } catch (IllegalAccessException ex) {
-        return (T) new ObjenesisStd().newInstance(cl);
-      }
+      throws InvocationTargetException {
+    try {
+      return (T) new ObjenesisStd().newInstance(cl);
+    } catch (ExceptionInInitializerError ex) {
+      throw new InvocationTargetException(ex.getCause());
     }
-    return (T) new ObjenesisStd().newInstance(cl);
   }
 
   /**
@@ -378,159 +380,60 @@ public final class Reflector {
    * @param className a <code>String</code> giving the name of the class
    * @return an <code>Object</code> which is an instance of the specified class
    *
-   * @throws InvocationTargetException if the constructor of a class
-   * throws an exception
-   *
-   * In the case of an `ExceptionInInitializerError` from `newInstance`, which
-   * signals an exception in a static initializer, we extract its cause and
-   * throw an `InvocationTargetException`.
+   * @throws InvocationTargetException if an `ExceptionInInitializerError` was
+   *   thrown, which signals an exception in the static initializer of the
+   *   class. Such an error could be thrown by Class.forName or
+   *   Objenesis.newInstance, both of which call the static initializer (for
+   *   the latter, see {@link #getInstance(Class) getInstance}.
+   *   We extract the cause of the error and wrap it within an
+   *   `InvocationTargetException`.
    */
   public static <T> Object getInstance(final String className)
       throws InvocationTargetException {
+    ClassPool pool = ClassPool.getDefault();
+    CtClass cl;
     try {
-      ClassPool pool = ClassPool.getDefault();
-      CtClass cl = pool.get(className);
-
-      for (CtMethod m : cl.getDeclaredMethods()) {
-        makePublic(m);
-      }
-
-      for (CtConstructor ctor : cl.getDeclaredConstructors()) {
-        makePublic(ctor);
-      }
-
-      for (CtField f : cl.getDeclaredFields()) {
-        makePublic(f);
-      }
-
-      makePublic(cl);
-
-      // we consider a class abstract if any method has no body
-      if (isAbstract(cl) || cl.isInterface()) {
-        String packageName = "com.diffblue.test_gen.";
-        String newClassName = packageName
-            + removePackageFromName(className);
-
-        CtClass implementation = pool.getOrNull(newClassName
-            + "_implementation");
-        if (implementation == null) {
-          implementation = pool.makeClass(newClassName
-              + "_implementation");
-
-          if (cl.isInterface()) {
-            implementation.setInterfaces(new CtClass[] {cl });
-          } else {
-            try {
-              implementation.setSuperclass(cl);
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-          }
-
-          // In the case of an abstract class, search any constructor in
-          //  the superclass and add an empty one with the same types.
-          // The class must have a constructor.
-          if (!cl.isInterface()) {
-            try {
-              CtConstructor[] ctors = cl.getConstructors();
-              if (ctors.length > 0) {
-                CtConstructor newCtor =
-                  CtNewConstructor.make(
-                    ctors[0].getParameterTypes(),
-                    ctors[0].getExceptionTypes(),
-                    implementation);
-                  implementation.addConstructor(newCtor);
-              } else {
-                throw new DeeptestUtilsRuntimeException(
-                  "Cannot find constructor in abstract class",
-                  new NotFoundException(
-                      "Cannot find constructor in abstract class"));
-              }
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            } catch (NotFoundException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-
-          } else {
-            // in the case of an interface, simply add a default
-            // constructor
-            try {
-              CtConstructor newCtor =
-                  new CtConstructor(new CtClass[] {}, implementation);
-              newCtor.setBody("{}");
-              implementation.addConstructor(newCtor);
-            } catch (CannotCompileException e) {
-              throw new
-                  DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-            }
-          }
-
-          // declared methods or only methods ?
-          try {
-            for (CtMethod m : cl.getDeclaredMethods()) {
-              if (isAbstract(m)) {
-                CtMethod method = CtNewMethod.make(javassist.Modifier.PUBLIC,
-                                                   m.getReturnType(),
-                                                   m.getName(),
-                                                   m.getParameterTypes(),
-                                                   m.getExceptionTypes(),
-                                                   null,
-                                                   implementation);
-                implementation.addMethod(method);
-              }
-            }
-          } catch (CannotCompileException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          } catch (NotFoundException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          }
-
-          try {
-            Class<?> ic = pool.toClass(implementation);
-            classMap.put(newClassName + "_implementation", ic);
-            return getInstance(ic);
-          } catch (CannotCompileException e) {
-            throw new
-                DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-          }
-
-        } else {
-          return getInstance((Class<?>) classMap
-            .get(newClassName + "_implementation"));
-        }
-      } else {
-        // If an error in the static initializer is thrown, we catch
-        // the resulting `ExceptionInInitializerError` and wrap its
-        // cause in an `InvocationTargetException`. This is done here as
-        // the static init is executed when calling `.forName`.
-        try {
-          return getInstance(Class.forName(className));
-        } catch (ExceptionInInitializerError ex) {
-          throw new InvocationTargetException(ex.getCause());
-        } catch (ClassNotFoundException e) {
-          throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
-        }
-      }
+      cl = pool.get(className);
     } catch (NotFoundException e) {
       throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
     }
-  }
-
-  /**
-   * Checks whether the <code>ABSTRACT</code> flag of a method is set.
-   *
-   * @param m the method to check
-   * @return a <code>boolean</code> value indicating whether the method is
-   * abstract.
-   */
-  private static boolean isAbstract(final CtMethod m) {
-    return ((m.getModifiers() & javassist.Modifier.ABSTRACT) != 0);
+    if (isAbstract(cl) || cl.isInterface()) {
+      makeFullyPublic(cl);
+      String implementingClassName = "com.diffblue.cover"
+          + removePackageFromName(className) + "Impl";
+      CtClass implementingCtClass = pool.getOrNull(implementingClassName);
+      if (implementingCtClass != null) {
+        return getInstance((Class<?>) classMap.get(implementingClassName));
+      }
+      implementingCtClass = pool.makeClass(implementingClassName);
+      if (cl.isInterface()) {
+        implementingCtClass.setInterfaces(new CtClass[] {cl });
+      } else {
+        try {
+          implementingCtClass.setSuperclass(cl);
+        } catch (CannotCompileException e) {
+          throw new
+              DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+        }
+      }
+      Class<?> implementingClass;
+      try {
+        implementingClass = pool.toClass(implementingCtClass);
+      } catch (CannotCompileException e) {
+        throw new
+            DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
+      classMap.put(implementingClassName, implementingClass);
+      return getInstance(implementingClass);
+    } else {
+      try {
+        return getInstance(Class.forName(className));
+      } catch (ExceptionInInitializerError ex) {
+        throw new InvocationTargetException(ex.getCause());
+      } catch (ClassNotFoundException e) {
+        throw new DeeptestUtilsRuntimeException(e.getMessage(), e.getCause());
+      }
+    }
   }
 
   /**
@@ -541,31 +444,6 @@ public final class Reflector {
    * abstract.
    */
   private static boolean isAbstract(final CtClass c) {
-    if ((c.getModifiers() & javassist.Modifier.ABSTRACT) != 0) {
-      return true;
-    }
-    for (CtMethod m : c.getDeclaredMethods()) {
-      if (isAbstract(m)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Returns the default constructor if one exists.
-   *
-   * @param c the class to search the constructor in
-   * @return a value holding a <code>Constructor</code>
-   *     object if it exists, else null
-   */
-  private static Constructor<?> getDefaultConstructor(
-      final Class<?> c) {
-    for (Constructor ctor : c.getDeclaredConstructors()) {
-      if (ctor.getParameterTypes().length == 0) {
-        return ctor;
-      }
-    }
-    return null;
+    return (c.getModifiers() & javassist.Modifier.ABSTRACT) != 0;
   }
 }
