@@ -1,3 +1,8 @@
+1.9.0
+=====
+* [TG-5859] Always use Objenesis to instantiate objects, never call real constructors
+* [TG-5895] Fix wrapping of errors within `InvocationTargetException`s in `Reflector.getInstance`
+
 1.8.1
 =====
 * Work around Maven Surefire plugin bug
