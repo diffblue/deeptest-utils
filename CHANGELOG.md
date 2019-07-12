@@ -1,3 +1,7 @@
+1.10.0
+======
+* [TG-8457] Upgrade javassist to 3.25.0-GA
+
 1.9.0
 =====
 * [TG-5859] Always use Objenesis to instantiate objects, never call real constructors
